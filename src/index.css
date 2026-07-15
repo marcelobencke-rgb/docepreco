@@ -1,0 +1,61 @@
+@import url('https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply text-foreground font-sans antialiased selection:bg-primary-container selection:text-on-primary-container;
+    background-color: #fdfbf7;
+    background-image: 
+      radial-gradient(at 0% 0%, #fff5f0 0px, transparent 50%),
+      radial-gradient(at 100% 100%, #f9e3d9 0px, transparent 50%),
+      radial-gradient(at 100% 0%, #fef3ef 0px, transparent 50%),
+      radial-gradient(at 0% 100%, #fff8f5 0px, transparent 50%);
+    background-attachment: fixed;
+  }
+}
+
+@layer utilities {
+  .shadow-soft {
+    box-shadow: 0 4px 12px rgba(159, 64, 45, 0.15); /* Tinted with primary #9f402d */
+  }
+
+  .shadow-sticker {
+    box-shadow: 0 8px 16px rgba(159, 64, 45, 0.15);
+  }
+
+  .border-soft {
+    border: 1px solid theme('colors.primary');
+    opacity: 0.15;
+  }
+
+  .blob-bg {
+    border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
+  }
+
+  /* Global glassmorphism for all main cards across the system */
+  .bg-surface-container-lowest {
+    background-color: rgba(255, 255, 255, 0.45) !important;
+    backdrop-filter: blur(16px) !important;
+    -webkit-backdrop-filter: blur(16px) !important;
+    border-color: rgba(255, 255, 255, 0.7) !important;
+  }
+}
+
+/* Custom Scrollbar for inner areas */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: theme('colors.surface-variant');
+  border-radius: theme('borderRadius.full');
+}
+::-webkit-scrollbar-thumb:hover {
+  background: theme('colors.tertiary-fixed-dim');
+}

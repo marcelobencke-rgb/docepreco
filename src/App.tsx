@@ -1,0 +1,49 @@
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider } from '@/contexts/AuthContext';
+import { ProtectedRoute } from '@/components/ProtectedRoute';
+import { Layout } from '@/components/Layout';
+import { Login } from '@/pages/Login';
+import { Register } from '@/pages/Register';
+import { Settings } from '@/pages/Settings';
+import { Ingredients } from '@/pages/Ingredients';
+import { Recipes } from '@/pages/Recipes';
+import { RecipeForm } from '@/pages/RecipeForm';
+import { RecipeCatalog } from '@/pages/RecipeCatalog';
+import { Pricing } from '@/pages/Pricing';
+import { Dashboard } from '@/pages/Dashboard';
+import { Suppliers } from '@/pages/Suppliers';
+
+function App() {
+  return (
+    <AuthProvider>
+      <Router>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          
+          <Route
+            path="/"
+            element={
+              <ProtectedRoute>
+                <Layout />
+              </ProtectedRoute>
+            }
+          >
+            <Route index element={<Dashboard />} />
+            <Route path="ingredientes" element={<Ingredients />} />
+            <Route path="fornecedores" element={<Suppliers />} />
+            <Route path="receitas" element={<RecipeCatalog />} />
+            <Route path="fichas-tecnicas" element={<Recipes />} />
+            <Route path="fichas-tecnicas/:id" element={<RecipeForm />} />
+            <Route path="precificacao" element={<Pricing />} />
+            <Route path="configuracoes" element={<Settings />} />
+          </Route>
+          
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </Router>
+    </AuthProvider>
+  );
+}
+
+export default App;
