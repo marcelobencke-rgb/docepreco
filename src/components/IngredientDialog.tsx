@@ -179,7 +179,7 @@ export const IngredientDialog = ({ open, onOpenChange, ingredientToEdit, onSave 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label className="font-label-md text-on-surface-variant">Unidade de compra</Label>
-              <Select value={purchaseUnit} onValueChange={setPurchaseUnit}>
+              <Select value={purchaseUnit} onValueChange={(val: string | null) => setPurchaseUnit(val || 'kg')}>
                 <SelectTrigger className="bg-surface border-2 border-outline-variant font-body-md rounded-xl h-10">
                   <SelectValue />
                 </SelectTrigger>

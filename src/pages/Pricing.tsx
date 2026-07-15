@@ -147,7 +147,7 @@ export const Pricing = () => {
             <div className="absolute top-0 right-0 w-32 h-32 bg-primary-fixed-dim opacity-20 blur-2xl -mr-10 -mt-10"></div>
             <h3 className="font-headline-sm text-on-surface mb-md relative z-10">1. Escolha a Receita</h3>
             <div className="relative z-10">
-              <Select value={selectedRecipeId} onValueChange={setSelectedRecipeId}>
+              <Select value={selectedRecipeId} onValueChange={(val) => setSelectedRecipeId(val || '')}>
                 <SelectTrigger className="bg-surface border-2 border-outline-variant font-body-md h-10 w-full rounded-full focus:ring-tertiary-fixed">
                   <SelectValue placeholder="Selecione a ficha técnica...">
                     {selectedRecipe?.name}
