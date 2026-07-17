@@ -185,13 +185,8 @@ export const Shopping = () => {
     }
   };
 
-  
-  const _updateItemSupplier = async (itemId: string, supplierId: string) => {
-    if (selectedList?.status === 'completed') return;
-    const val = supplierId === 'none' ? null : supplierId;
-    await supabase.from('shopping_list_items').update({ supplier_id: val }).eq('id', itemId);
-    setListItems(listItems.map(i => i.id === itemId ? { ...i, supplier_id: val } : i));
-  };
+
+
 
   const handleAddFromRecipe = async () => {
     if (!selectedList || !user || !selectedRecipeId) return;

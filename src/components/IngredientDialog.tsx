@@ -1,11 +1,11 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { formatCurrencyInput, parseCurrencyInput } from '@/lib/utils';
+
 
 export type Ingredient = {
   id: string;
@@ -20,10 +20,7 @@ export type Ingredient = {
   suppliers?: { name: string } | null;
 };
 
-type Supplier = {
-  id: string;
-  name: string;
-};
+
 
 type IngredientDialogProps = {
   open: boolean;
@@ -38,8 +35,7 @@ export const IngredientDialog = ({ open, onOpenChange, ingredientToEdit, onSave 
   // Form State
   const [name, setName] = useState('');
   const [purchaseUnit, setPurchaseUnit] = useState('kg');
-  const [purchaseQuantity, setPurchaseQuantity] = useState('');
-  const [purchasePrice, setPurchasePrice] = useState('');
+
   const [category, setCategory] = useState('Ingrediente');
   
   const [saving, setSaving] = useState(false);
@@ -59,11 +55,7 @@ export const IngredientDialog = ({ open, onOpenChange, ingredientToEdit, onSave 
   }, [open, ingredientToEdit, user]);
 
 
-  const getBaseUnitLabel = (unit: string) => {
-    if (unit === 'kg' || unit === 'g') return 'g';
-    if (unit === 'litro' || unit === 'ml') return 'ml';
-    return 'un';
-  };
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

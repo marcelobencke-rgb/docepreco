@@ -483,7 +483,7 @@ export const RecipeCatalog = () => {
   // Render Grid View
   const filteredRecipes = recipes
     .filter(r => r.name.toLowerCase().includes(searchTerm.toLowerCase()))
-    .filter(r => {
+    .filter(_r => {
       if (categoryFilter === 'todas') return true;
       // Depending on your actual recipe category values in DB, adapt if needed.
       // E.g., if there's no category in Recipe yet, we might skip filtering or assume. 
