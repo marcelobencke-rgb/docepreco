@@ -8,7 +8,8 @@ export const Layout = () => {
   const navItems = [
     { name: 'Dashboard', path: '/', icon: 'dashboard' },
     { name: 'Fornecedores', path: '/fornecedores', icon: 'storefront' },
-    { name: 'Ingredientes', path: '/ingredientes', icon: 'kitchen' },
+    { name: 'Inventário', path: '/inventario', icon: 'inventory_2' },
+    { name: 'Compras', path: '/compras', icon: 'shopping_cart' },
     { name: 'Receitas', path: '/receitas', icon: 'cake' },
     { name: 'Fichas Técnicas', path: '/fichas-tecnicas', icon: 'menu_book' },
     { name: 'Precificação', path: '/precificacao', icon: 'payments' },

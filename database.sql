@@ -37,10 +37,12 @@ create table public.ingredients (
   id uuid default uuid_generate_v4() primary key,
   user_id uuid references auth.users on delete cascade not null,
   name text not null,
+  category text default 'Ingrediente',
   purchase_unit text not null, -- kg, g, litro, ml, unidade, duzia
   purchase_quantity numeric(10,2) not null,
   purchase_price numeric(10,2) not null,
   base_unit_cost numeric(10,4) not null,
+  current_stock numeric(10,2) default 0.00,
   supplier_id uuid references public.suppliers on delete set null,
   last_updated timestamp with time zone default timezone('utc'::text, now()) not null,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
@@ -51,6 +53,7 @@ create table public.recipes (
   id uuid default uuid_generate_v4() primary key,
   user_id uuid references auth.users on delete cascade not null,
   name text not null,
+  category text default 'Sem Categoria',
   yield numeric(10,2) not null,
   prep_time_minutes integer not null,
   instructions text,
@@ -164,3 +167,67 @@ create policy "Images are publicly accessible" on storage.objects for select usi
 create policy "Users can upload images" on storage.objects for insert with check (bucket_id = 'recipe-images' and auth.uid() = owner);
 create policy "Users can update own images" on storage.objects for update using (bucket_id = 'recipe-images' and auth.uid() = owner);
 create policy "Users can delete own images" on storage.objects for delete using (bucket_id = 'recipe-images' and auth.uid() = owner);
+
+-- 8. Create stock_movements
+create table public.stock_movements (
+  id uuid default uuid_generate_v4() primary key,
+  ingredient_id uuid references public.ingredients on delete cascade not null,
+  user_id uuid references auth.users on delete cascade not null,
+  type text not null check (type in ('in', 'out')),
+  quantity numeric(10,2) not null,
+  reason text not null check (reason in ('manual', 'recipe_production', 'purchase')),
+  reference_id uuid, -- links to recipe_id or shopping_list_id
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+-- 9. Create shopping_lists
+create table public.shopping_lists (
+  id uuid default uuid_generate_v4() primary key,
+  user_id uuid references auth.users on delete cascade not null,
+  name text not null,
+  status text not null check (status in ('pending', 'completed')) default 'pending',
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  completed_at timestamp with time zone
+);
+
+-- 10. Create shopping_list_items
+create table public.shopping_list_items (
+  id uuid default uuid_generate_v4() primary key,
+  list_id uuid references public.shopping_lists on delete cascade not null,
+  ingredient_id uuid references public.ingredients on delete cascade not null,
+  quantity numeric(10,2) not null,
+  price numeric(10,2) default 0.00,
+  purchased boolean default false,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+-- Enable RLS for new tables
+alter table public.stock_movements enable row level security;
+alter table public.shopping_lists enable row level security;
+alter table public.shopping_list_items enable row level security;
+
+-- Policies for stock_movements
+create policy "Users can view own stock_movements" on public.stock_movements for select using (auth.uid() = user_id);
+create policy "Users can insert own stock_movements" on public.stock_movements for insert with check (auth.uid() = user_id);
+create policy "Users can update own stock_movements" on public.stock_movements for update using (auth.uid() = user_id);
+create policy "Users can delete own stock_movements" on public.stock_movements for delete using (auth.uid() = user_id);
+
+-- Policies for shopping_lists
+create policy "Users can view own shopping_lists" on public.shopping_lists for select using (auth.uid() = user_id);
+create policy "Users can insert own shopping_lists" on public.shopping_lists for insert with check (auth.uid() = user_id);
+create policy "Users can update own shopping_lists" on public.shopping_lists for update using (auth.uid() = user_id);
+create policy "Users can delete own shopping_lists" on public.shopping_lists for delete using (auth.uid() = user_id);
+
+-- Policies for shopping_list_items
+create policy "Users can view own shopping_list_items" on public.shopping_list_items for select using (
+  exists (select 1 from public.shopping_lists where shopping_lists.id = shopping_list_items.list_id and shopping_lists.user_id = auth.uid())
+);
+create policy "Users can insert own shopping_list_items" on public.shopping_list_items for insert with check (
+  exists (select 1 from public.shopping_lists where shopping_lists.id = shopping_list_items.list_id and shopping_lists.user_id = auth.uid())
+);
+create policy "Users can update own shopping_list_items" on public.shopping_list_items for update using (
+  exists (select 1 from public.shopping_lists where shopping_lists.id = shopping_list_items.list_id and shopping_lists.user_id = auth.uid())
+);
+create policy "Users can delete own shopping_list_items" on public.shopping_list_items for delete using (
+  exists (select 1 from public.shopping_lists where shopping_lists.id = shopping_list_items.list_id and shopping_lists.user_id = auth.uid())
+);

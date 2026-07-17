@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Toast } from '@/components/ui/toast';
 
 type SettingsForm = {
   labor_hour_value: number;
@@ -12,6 +14,7 @@ type SettingsForm = {
   estimated_monthly_production: number;
   default_card_fee_percent: number;
   default_profit_margin_percent: number;
+  allow_out_of_stock_production: 'Sim' | 'Não' | 'Confirmar' | 'yes' | 'no' | 'confirm';
 };
 
 export const Settings = () => {
@@ -19,6 +22,8 @@ export const Settings = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [settings, setSettings] = useState<SettingsForm | null>(null);
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -41,6 +46,7 @@ export const Settings = () => {
           estimated_monthly_production: 1,
           default_card_fee_percent: 3.00,
           default_profit_margin_percent: 40.00,
+          allow_out_of_stock_production: 'confirm',
         };
         await supabase.from('user_settings').insert(defaultSettings);
         setSettings(defaultSettings);
@@ -56,7 +62,7 @@ export const Settings = () => {
     if (!user || !settings) return;
     setSaving(true);
     
-    await supabase
+    const { error } = await supabase
       .from('user_settings')
       .update({
         labor_hour_value: settings.labor_hour_value,
@@ -64,11 +70,20 @@ export const Settings = () => {
         estimated_monthly_production: settings.estimated_monthly_production,
         default_card_fee_percent: settings.default_card_fee_percent,
         default_profit_margin_percent: settings.default_profit_margin_percent,
+        allow_out_of_stock_production: settings.allow_out_of_stock_production,
       })
       .eq('id', user.id);
       
     setSaving(false);
-    alert('Configurações salvas com sucesso!');
+    
+    if (error) {
+      console.error('Erro ao salvar configurações:', error);
+      alert('Erro ao salvar configurações: ' + error.message);
+      return;
+    }
+    
+    setSuccessMessage('Configurações salvas com sucesso!');
+    setIsSuccessModalOpen(true);
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -161,6 +176,30 @@ export const Settings = () => {
                   onChange={handleChange}
                 />
               </div>
+              <div className="space-y-2 md:col-span-2 mt-4 pt-4 border-t border-surface-container">
+                <Label>Permitir baixa sem estoque?</Label>
+                <div className="text-[13px] text-on-surface-variant mb-2">
+                  Escolha o que acontece ao tentar finalizar uma receita sem ter os ingredientes necessários em estoque.
+                </div>
+                <Select
+                  value={
+                    settings.allow_out_of_stock_production === 'confirm' ? 'Confirmar' : 
+                    settings.allow_out_of_stock_production === 'yes' ? 'Sim' : 
+                    settings.allow_out_of_stock_production === 'no' ? 'Não' : 
+                    (settings.allow_out_of_stock_production || 'Confirmar')
+                  }
+                  onValueChange={(val: any) => setSettings(prev => prev ? { ...prev, allow_out_of_stock_production: val } : null)}
+                >
+                  <SelectTrigger className="w-full bg-surface border-2 border-outline-variant font-body-md rounded-2xl !h-12">
+                    <SelectValue placeholder="Selecione..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Sim">Sim - Finaliza a receita ignorando a baixa no estoque automático (não deduz)</SelectItem>
+                    <SelectItem value="Não">Não - Bloqueia a finalização da receita</SelectItem>
+                    <SelectItem value="Confirmar">Confirmar - Pergunta se deseja finalizar sem dar baixa</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </CardContent>
           <CardFooter>
@@ -170,6 +209,13 @@ export const Settings = () => {
           </CardFooter>
         </form>
       </Card>
+
+      <Toast 
+        open={isSuccessModalOpen} 
+        onOpenChange={setIsSuccessModalOpen} 
+        title="Sucesso!" 
+        description={successMessage} 
+      />
     </div>
   );
 };

@@ -16,7 +16,8 @@ export const Dashboard = () => {
       const { count: ingCount } = await supabase
         .from('ingredients')
         .select('*', { count: 'exact', head: true })
-        .eq('user_id', user.id);
+        .eq('user_id', user.id)
+        .is('deleted_at', null);
 
       const { count: recCount } = await supabase
         .from('recipes')

@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 type Supplier = {
   id: string;
@@ -25,6 +26,10 @@ export const Suppliers = () => {
   const [contactInfo, setContactInfo] = useState('');
   const [email, setEmail] = useState('');
   const [cnpj, setCnpj] = useState('');
+
+  // Filters State
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortOrder, setSortOrder] = useState('az');
 
   const fetchSuppliers = async () => {
     if (!user) return;
@@ -143,15 +148,55 @@ export const Suppliers = () => {
         </div>
       </header>
 
+      {/* Filters Row */}
+      <div className="flex flex-col md:flex-row gap-4 mb-6 items-center">
+        <div className="relative flex-1 w-full">
+          <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px] z-10">search</span>
+          <Input 
+            type="text" 
+            placeholder="Buscar fornecedores..." 
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-12 pr-4 bg-surface border-2 border-outline-variant font-body-md rounded-2xl h-12"
+          />
+        </div>
+        <div className="flex gap-4 w-full md:w-auto">
+          <div className="w-full md:w-48">
+            <Select value={sortOrder} onValueChange={setSortOrder}>
+              <SelectTrigger className="bg-surface border-2 border-outline-variant font-body-md rounded-2xl !h-12 w-full">
+                <SelectValue placeholder="A-Z" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="az">A-Z</SelectItem>
+                <SelectItem value="za">Z-A</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      </div>
+
       {/* List Container */}
       <div className="flex flex-col gap-4">
-        {suppliers.length === 0 ? (
-          <div className="py-xl flex flex-col items-center justify-center text-on-surface-variant bg-surface-container-lowest rounded-3xl border-2 border-dashed border-surface-container">
-            <span className="material-symbols-outlined text-6xl mb-4 opacity-50">storefront</span>
-            <p className="font-body-md text-center max-w-md">Nenhum fornecedor cadastrado. Cadastre suas lojas e marcas preferidas.</p>
-          </div>
-        ) : (
-          suppliers.map((supplier) => (
+        {(() => {
+          const filteredSuppliers = suppliers
+            .filter(sup => sup.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                           (sup.contact_info && sup.contact_info.toLowerCase().includes(searchTerm.toLowerCase())))
+            .sort((a, b) => {
+              if (sortOrder === 'az') return a.name.localeCompare(b.name);
+              if (sortOrder === 'za') return b.name.localeCompare(a.name);
+              return 0;
+            });
+
+          if (filteredSuppliers.length === 0) {
+            return (
+              <div className="py-xl flex flex-col items-center justify-center text-on-surface-variant bg-surface-container-lowest rounded-3xl border-2 border-dashed border-surface-container">
+                <span className="material-symbols-outlined text-6xl mb-4 opacity-50">storefront</span>
+                <p className="font-body-md text-center max-w-md">{searchTerm ? 'Nenhum fornecedor encontrado.' : 'Nenhum fornecedor cadastrado. Cadastre suas lojas e marcas preferidas.'}</p>
+              </div>
+            );
+          }
+
+          return filteredSuppliers.map((supplier) => (
             <div key={supplier.id} className="bg-surface-container-lowest rounded-2xl p-4 flex flex-col md:flex-row items-start md:items-center justify-between shadow-sticker hover:scale-[1.01] transition-all relative overflow-hidden group border-2 border-surface-container gap-4">
               <div className="absolute top-0 right-0 w-32 h-32 bg-primary-container/5 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none"></div>
               
@@ -178,8 +223,8 @@ export const Suppliers = () => {
                 </button>
               </div>
             </div>
-          ))
-        )}
+          ));
+        })()}
       </div>
     </div>
   );

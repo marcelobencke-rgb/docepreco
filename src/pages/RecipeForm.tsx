@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
@@ -30,6 +30,40 @@ type RecipeIngredient = {
   purchase_unit?: string; // for UI
 };
 
+const StepEditor = ({ 
+  value, 
+  onChange, 
+  placeholder 
+}: { 
+  value: string; 
+  onChange: (val: string) => void; 
+  placeholder: string;
+}) => {
+  const editorRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (editorRef.current && editorRef.current.innerHTML !== value) {
+      editorRef.current.innerHTML = value;
+    }
+  }, [value]);
+
+  return (
+    <div 
+      ref={editorRef}
+      contentEditable
+      className="flex-1 w-full bg-surface border-2 border-outline-variant font-body-md rounded-2xl p-4 focus-visible:border-primary-container focus-visible:ring-2 focus-visible:ring-primary-container/20 min-h-[100px] shadow-inner outline-none transition-all [&_b]:font-bold [&_strong]:font-bold [&_i]:italic [&_em]:italic [&_u]:underline [&_b]:text-primary [&_strong]:text-primary empty:before:content-[attr(data-placeholder)] empty:before:text-on-surface-variant/50 pr-12"
+      onInput={(e) => onChange(e.currentTarget.innerHTML)}
+      onPaste={(e) => {
+        e.preventDefault();
+        const text = e.clipboardData.getData('text/plain');
+        document.execCommand('insertText', false, text);
+      }}
+      data-placeholder={placeholder}
+      style={{ whiteSpace: 'pre-wrap' }}
+    />
+  );
+};
+
 export const RecipeForm = () => {
   const { id } = useParams<{ id: string }>();
   const isEditing = Boolean(id && id !== 'nova');
@@ -42,9 +76,10 @@ export const RecipeForm = () => {
 
   // Recipe Fields
   const [name, setName] = useState('');
+  const [category, setCategory] = useState('');
   const [recipeYield, setRecipeYield] = useState('');
   const [prepTime, setPrepTime] = useState('');
-  const [instructions, setInstructions] = useState('');
+  const [instructions, setInstructions] = useState<string[]>(['']);
   const [notes, setNotes] = useState('');
   const [imageUrl, setImageUrl] = useState('');
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -53,6 +88,9 @@ export const RecipeForm = () => {
 
   // UI State
   const [activeTab, setActiveTab] = useState<'ingredients' | 'instructions' | 'notes'>('ingredients');
+  const [availableCategories, setAvailableCategories] = useState<string[]>([]);
+  const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
+  const categoryDropdownRef = useRef<HTMLDivElement>(null);
 
   // Quick Add State
   const [quickAddOpen, setQuickAddOpen] = useState(false);
@@ -67,9 +105,20 @@ export const RecipeForm = () => {
         .from('ingredients')
         .select('id, name, base_unit_cost, purchase_unit')
         .eq('user_id', user.id)
+        .is('deleted_at', null)
         .order('name');
-        
       if (ingData) setAvailableIngredients(ingData);
+
+      // Load unique categories
+      const { data: catData } = await supabase
+        .from('recipes')
+        .select('category')
+        .eq('user_id', user.id);
+      
+      if (catData) {
+        const uniqueCategories = Array.from(new Set(catData.map((r: any) => r.category).filter(Boolean)));
+        setAvailableCategories(uniqueCategories);
+      }
 
       if (isEditing && id) {
         // Load recipe
@@ -81,9 +130,10 @@ export const RecipeForm = () => {
           
         if (recipeData) {
           setName(recipeData.name);
+          setCategory(recipeData.category || '');
           setRecipeYield(recipeData.yield.toString());
           setPrepTime(recipeData.prep_time_minutes.toString());
-          setInstructions(recipeData.instructions || '');
+          setInstructions(recipeData.instructions ? recipeData.instructions.split('\n\n') : ['']);
           setNotes(recipeData.notes || '');
           setImageUrl(recipeData.image_url || '');
           setImagePreview(recipeData.image_url || '');
@@ -111,7 +161,17 @@ export const RecipeForm = () => {
     };
 
     loadData();
-  }, [user, id, isEditing]);
+  }, [id, isEditing, user]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (categoryDropdownRef.current && !categoryDropdownRef.current.contains(event.target as Node)) {
+        setShowCategoryDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -220,9 +280,10 @@ export const RecipeForm = () => {
     const recipeData = {
       user_id: user.id,
       name,
+      category: category || 'Sem Categoria',
       yield: parseFloat(recipeYield),
       prep_time_minutes: parseInt(prepTime, 10),
-      instructions,
+      instructions: instructions.map(s => s.trim()).filter(Boolean).join('\n\n'),
       notes,
       image_url: finalImageUrl,
       updated_at: new Date().toISOString(),
@@ -263,7 +324,7 @@ export const RecipeForm = () => {
     }
 
     setSaving(false);
-    navigate('/receitas');
+    navigate('/fichas-tecnicas');
   };
 
   if (loading) return <div className="p-xl text-center text-on-surface-variant font-body-md">Carregando ficha...</div>;
@@ -330,6 +391,65 @@ export const RecipeForm = () => {
                   placeholder="Ex: Bolo de Cenoura com Gotas"
                   required 
                 />
+              </div>
+              
+              <div className="space-y-2 relative" ref={categoryDropdownRef}>
+                <Label htmlFor="category" className="font-label-md text-on-surface-variant">Categoria</Label>
+                <Input 
+                  id="category" 
+                  className="bg-surface border-2 border-outline-variant font-body-md rounded-xl h-10 focus-visible:ring-primary-container" 
+                  value={category} 
+                  onChange={(e) => {
+                    setCategory(e.target.value);
+                    setShowCategoryDropdown(true);
+                  }}
+                  onFocus={() => setShowCategoryDropdown(true)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      setShowCategoryDropdown(false);
+                      if (category.trim() && !availableCategories.find(c => c.toLowerCase() === category.trim().toLowerCase())) {
+                        setAvailableCategories([...availableCategories, category.trim()]);
+                      }
+                    }
+                  }}
+                  placeholder="Buscar ou criar..."
+                />
+                {showCategoryDropdown && (
+                  <div className="absolute top-[68px] left-0 w-full bg-surface-container-lowest border-2 border-outline-variant/50 rounded-2xl shadow-sticker z-[100] max-h-48 overflow-y-auto p-1">
+                    {availableCategories.filter(cat => cat.toLowerCase().includes(category.toLowerCase())).length > 0 ? (
+                      availableCategories
+                        .filter(cat => cat.toLowerCase().includes(category.toLowerCase()))
+                        .map(cat => (
+                          <div 
+                            key={cat} 
+                            className="px-3 py-2 hover:bg-secondary-container hover:text-on-secondary-container rounded-xl cursor-pointer font-body-md text-on-surface transition-colors"
+                            onClick={() => {
+                              setCategory(cat);
+                              setShowCategoryDropdown(false);
+                            }}
+                          >
+                            {cat}
+                          </div>
+                        ))
+                    ) : null}
+                    
+                    {category.trim() && !availableCategories.find(c => c.toLowerCase() === category.trim().toLowerCase()) && (
+                      <div 
+                        className="px-3 py-2 bg-primary-container/20 text-primary hover:bg-primary-container hover:text-on-primary-container rounded-xl cursor-pointer font-body-md font-bold transition-colors flex items-center gap-2"
+                        onClick={() => {
+                          if (category.trim() && !availableCategories.find(c => c.toLowerCase() === category.trim().toLowerCase())) {
+                            setAvailableCategories([...availableCategories, category.trim()]);
+                          }
+                          setShowCategoryDropdown(false);
+                        }}
+                      >
+                        <span className="material-symbols-outlined text-[16px]">add_circle</span>
+                        Criar "{category}"
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
               
               <div className="grid grid-cols-2 gap-4">
@@ -511,15 +631,63 @@ export const RecipeForm = () => {
 
                 {activeTab === 'instructions' && (
                   <div className="flex-1 flex flex-col space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                    <Label htmlFor="instructions" className="font-label-lg text-on-surface">Passo a passo da receita</Label>
-                    <p className="font-body-md text-on-surface-variant -mt-2 mb-2">Descreva detalhadamente como preparar esta receita.</p>
-                    <textarea 
-                      id="instructions"
-                      className="flex-1 w-full bg-surface border-2 border-outline-variant font-body-md rounded-2xl p-4 focus-visible:border-primary-container focus-visible:ring-2 focus-visible:ring-primary-container/20 min-h-[300px] resize-y shadow-inner outline-none"
-                      placeholder="Ex:&#10;1. Bata os ovos com o açúcar até formar um creme fofo...&#10;2. Adicione a farinha aos poucos..."
-                      value={instructions}
-                      onChange={(e) => setInstructions(e.target.value)}
-                    />
+                    <Label className="font-label-lg text-on-surface">Passo a passo da receita</Label>
+                    <div className="flex items-center gap-2 -mt-2 mb-2">
+                      <p className="font-body-md text-on-surface-variant">Descreva detalhadamente as etapas de preparo desta receita.</p>
+                      <div className="relative group">
+                        <div className="w-5 h-5 rounded-full bg-surface-container-high hover:bg-primary-container text-on-surface-variant hover:text-on-primary-container flex items-center justify-center cursor-help transition-colors">
+                          <span className="material-symbols-outlined text-[14px]">help</span>
+                        </div>
+                        <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-[240px] bg-[#f4ecea] text-on-surface p-4 rounded-2xl shadow-[0_8px_30px_rgba(159,64,45,0.15)] opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-30 text-sm border border-[#e8d5d1] pointer-events-none">
+                          <p className="font-bold mb-3 text-[#9F402D]">Atalhos de formatação:</p>
+                          <ul className="space-y-2.5">
+                            <li className="flex items-center gap-1.5 text-on-surface-variant"><kbd className="bg-white px-2 py-1 rounded-md border border-[#e8d5d1] shadow-sm text-[11px] font-bold text-[#4a322b]">Ctrl</kbd> + <kbd className="bg-white px-2 py-1 rounded-md border border-[#e8d5d1] shadow-sm text-[11px] font-bold text-[#4a322b]">B</kbd> : Negrito</li>
+                            <li className="flex items-center gap-1.5 text-on-surface-variant"><kbd className="bg-white px-2 py-1 rounded-md border border-[#e8d5d1] shadow-sm text-[11px] font-bold text-[#4a322b]">Ctrl</kbd> + <kbd className="bg-white px-2 py-1 rounded-md border border-[#e8d5d1] shadow-sm text-[11px] font-bold text-[#4a322b]">I</kbd> : Itálico</li>
+                            <li className="flex items-center gap-1.5 text-on-surface-variant"><kbd className="bg-white px-2 py-1 rounded-md border border-[#e8d5d1] shadow-sm text-[11px] font-bold text-[#4a322b]">Ctrl</kbd> + <kbd className="bg-white px-2 py-1 rounded-md border border-[#e8d5d1] shadow-sm text-[11px] font-bold text-[#4a322b]">U</kbd> : Sublinhado</li>
+                          </ul>
+                          <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-l-[8px] border-l-transparent border-r-[8px] border-r-transparent border-t-[8px] border-t-[#f4ecea]"></div>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex flex-col gap-4">
+                      {instructions.map((step, index) => (
+                        <div key={index} className="flex gap-4 items-start relative group">
+                          <div className="w-8 h-8 rounded-full bg-secondary-fixed text-on-secondary-fixed flex items-center justify-center font-bold text-sm shrink-0 mt-2 shadow-inner">
+                            {index + 1}
+                          </div>
+                          <StepEditor 
+                            placeholder={index === 0 ? "Ex: Bata os ovos com o açúcar..." : "Descreva a próxima etapa..."}
+                            value={step}
+                            onChange={(val) => {
+                              const newSteps = [...instructions];
+                              newSteps[index] = val;
+                              setInstructions(newSteps);
+                            }}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const newSteps = instructions.filter((_, i) => i !== index);
+                              setInstructions(newSteps.length > 0 ? newSteps : ['']);
+                            }}
+                            className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center bg-surface hover:bg-error-container text-on-surface-variant hover:text-error rounded-full shadow-sm opacity-0 group-hover:opacity-100 transition-all border border-outline-variant"
+                            title="Remover etapa"
+                          >
+                            <span className="material-symbols-outlined text-[16px]">delete</span>
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="mt-4 flex justify-start">
+                      <button
+                        type="button"
+                        onClick={() => setInstructions([...instructions, ''])}
+                        className="flex items-center justify-center gap-2 bg-surface hover:bg-surface-container-low text-on-surface-variant hover:text-primary font-label-md px-6 py-3 rounded-full border-2 border-dashed border-outline-variant transition-all active:scale-95 shadow-sm"
+                      >
+                        <span className="material-symbols-outlined text-[16px]">add</span>
+                        Nova Etapa
+                      </button>
+                    </div>
                   </div>
                 )}
 

@@ -5,7 +5,8 @@ import { Layout } from '@/components/Layout';
 import { Login } from '@/pages/Login';
 import { Register } from '@/pages/Register';
 import { Settings } from '@/pages/Settings';
-import { Ingredients } from '@/pages/Ingredients';
+import { Inventory } from '@/pages/Inventory';
+import { Shopping } from '@/pages/Shopping';
 import { Recipes } from '@/pages/Recipes';
 import { RecipeForm } from '@/pages/RecipeForm';
 import { RecipeCatalog } from '@/pages/RecipeCatalog';
@@ -30,10 +31,11 @@ function App() {
             }
           >
             <Route index element={<Dashboard />} />
-            <Route path="ingredientes" element={<Ingredients />} />
             <Route path="fornecedores" element={<Suppliers />} />
-            <Route path="receitas" element={<RecipeCatalog />} />
+            <Route path="inventario" element={<Inventory />} />
+            <Route path="compras" element={<Shopping />} />
             <Route path="fichas-tecnicas" element={<Recipes />} />
+            <Route path="receitas" element={<RecipeCatalog />} />
             <Route path="fichas-tecnicas/:id" element={<RecipeForm />} />
             <Route path="precificacao" element={<Pricing />} />
             <Route path="configuracoes" element={<Settings />} />
