@@ -162,7 +162,7 @@ export const Suppliers = () => {
         </div>
         <div className="flex gap-4 w-full md:w-auto">
           <div className="w-full md:w-48">
-            <Select value={sortOrder} onValueChange={setSortOrder}>
+            <Select value={sortOrder} onValueChange={(val) => setSortOrder(val || 'az')}>
               <SelectTrigger className="bg-surface border-2 border-outline-variant font-body-md rounded-2xl !h-12 w-full">
                 <SelectValue placeholder="A-Z" />
               </SelectTrigger>

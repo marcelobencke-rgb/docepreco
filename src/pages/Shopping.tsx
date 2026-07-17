@@ -28,6 +28,7 @@ type ShoppingListItem = {
     current_stock: number;
     purchase_quantity: number;
     purchase_price: number;
+    base_unit_cost?: number;
   } | null;
   supplier_id?: string | null;
 };
@@ -628,7 +629,7 @@ export const Shopping = () => {
                       <div className="flex-1 w-full">
                         <Select 
                           value="" 
-                          onValueChange={handleInlineAddItem}
+                          onValueChange={(val) => { if (val) handleInlineAddItem(val); }}
                         >
                           <SelectTrigger className="bg-surface border-2 border-primary/20 hover:border-primary/50 text-primary font-medium rounded-xl h-10 transition-colors shadow-sm w-full">
                             <SelectValue placeholder="Adicionar Insumo..." />
@@ -694,7 +695,7 @@ export const Shopping = () => {
           <div className="space-y-4 pt-4">
             <div className="space-y-2">
               <Label>Selecione uma receita</Label>
-              <Select value={selectedRecipeId} onValueChange={setSelectedRecipeId}>
+              <Select value={selectedRecipeId} onValueChange={(val) => setSelectedRecipeId(val || '')}>
                 <SelectTrigger className="bg-surface border-2 border-outline-variant h-12 rounded-2xl">
                   <SelectValue placeholder="Escolha a receita..." />
                 </SelectTrigger>
