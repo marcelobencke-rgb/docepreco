@@ -275,7 +275,7 @@ export const Pricing = () => {
             
             <div className="flex gap-4 w-full md:w-auto">
               <div className="w-full md:w-48">
-                <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                <Select value={categoryFilter} onValueChange={(val) => setCategoryFilter(val || 'todas')}>
                   <SelectTrigger className="bg-surface border-2 border-outline-variant font-body-md rounded-2xl !h-12 w-full">
                     <SelectValue placeholder="Todas as Categorias" />
                   </SelectTrigger>

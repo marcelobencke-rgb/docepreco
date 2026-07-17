@@ -39,8 +39,7 @@ export const Settings = () => {
         setSettings(data as SettingsForm);
       } else if (error && error.code === 'PGRST116') {
         // No row exists, create one
-        const defaultSettings = {
-          id: user.id,
+        const defaultSettings: SettingsForm = {
           labor_hour_value: 15.00,
           fixed_costs_monthly: 0.00,
           estimated_monthly_production: 1,
@@ -48,7 +47,7 @@ export const Settings = () => {
           default_profit_margin_percent: 40.00,
           allow_out_of_stock_production: 'confirm',
         };
-        await supabase.from('user_settings').insert(defaultSettings);
+        await supabase.from('user_settings').insert({ id: user.id, ...defaultSettings });
         setSettings(defaultSettings);
       }
       setLoading(false);

@@ -126,7 +126,7 @@ export const IngredientDialog = ({ open, onOpenChange, ingredientToEdit, onSave 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="category" className="text-on-surface">Categoria</Label>
-              <Select value={category} onValueChange={setCategory}>
+              <Select value={category} onValueChange={(val) => setCategory(val || 'Ingrediente')}>
                 <SelectTrigger className="bg-surface border-2 border-outline-variant rounded-2xl h-12">
                   <SelectValue placeholder="Selecione..." />
                 </SelectTrigger>

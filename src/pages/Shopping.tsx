@@ -186,7 +186,7 @@ export const Shopping = () => {
   };
 
   
-  const updateItemSupplier = async (itemId: string, supplierId: string) => {
+  const _updateItemSupplier = async (itemId: string, supplierId: string) => {
     if (selectedList?.status === 'completed') return;
     const val = supplierId === 'none' ? null : supplierId;
     await supabase.from('shopping_list_items').update({ supplier_id: val }).eq('id', itemId);
@@ -375,7 +375,7 @@ export const Shopping = () => {
               </div>
               <div className="flex gap-4 w-full md:w-auto">
                 <div className="w-full md:w-48">
-                  <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <Select value={statusFilter} onValueChange={(val) => setStatusFilter(val || 'todas')}>
                     <SelectTrigger className="bg-surface border-2 border-outline-variant font-body-md rounded-2xl !h-12 w-full">
                       <SelectValue placeholder="Todos os status" />
                     </SelectTrigger>
@@ -387,7 +387,7 @@ export const Shopping = () => {
                   </Select>
                 </div>
                 <div className="w-full md:w-48">
-                  <Select value={sortOrder} onValueChange={setSortOrder}>
+                  <Select value={sortOrder} onValueChange={(val) => setSortOrder(val || 'recentes')}>
                     <SelectTrigger className="bg-surface border-2 border-outline-variant font-body-md rounded-2xl !h-12 w-full">
                       <SelectValue placeholder="Mais recentes" />
                     </SelectTrigger>

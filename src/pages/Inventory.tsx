@@ -302,7 +302,7 @@ export const Inventory = () => {
         </div>
         <div className="flex gap-4 w-full md:w-auto">
           <div className="w-full md:w-48">
-            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+            <Select value={categoryFilter} onValueChange={(val) => setCategoryFilter(val || 'todas')}>
               <SelectTrigger className="bg-surface border-2 border-outline-variant font-body-md rounded-2xl !h-12 w-full">
                 <SelectValue placeholder={activeTab === 'estoque' ? "Todas as categorias" : "Todos os tipos"} />
               </SelectTrigger>
@@ -325,7 +325,7 @@ export const Inventory = () => {
           </div>
           {activeTab === 'movimentacoes' && (
             <div className="w-full md:w-48">
-              <Select value={supplierFilter} onValueChange={setSupplierFilter}>
+              <Select value={supplierFilter} onValueChange={(val) => setSupplierFilter(val || 'todos')}>
                 <SelectTrigger className="bg-surface border-2 border-outline-variant font-body-md rounded-2xl !h-12 w-full">
                   <SelectValue placeholder="Fornecedor" />
                 </SelectTrigger>
@@ -339,7 +339,7 @@ export const Inventory = () => {
             </div>
           )}
           <div className="w-full md:w-48">
-            <Select value={sortOrder} onValueChange={setSortOrder}>
+            <Select value={sortOrder} onValueChange={(val) => setSortOrder(val || 'az')}>
               <SelectTrigger className="bg-surface border-2 border-outline-variant font-body-md rounded-2xl !h-12 w-full">
                 <SelectValue placeholder="Mais recentes" />
               </SelectTrigger>
@@ -551,7 +551,7 @@ export const Inventory = () => {
                     onChange={(e) => setMovementQty(e.target.value)}
                     className="bg-surface border-2 border-outline-variant h-12 rounded-2xl flex-1 min-w-0"
                   />
-                  <Select value={movementUnit} onValueChange={setMovementUnit}>
+                  <Select value={movementUnit} onValueChange={(val) => setMovementUnit(val || 'g')}>
                     <SelectTrigger className="bg-surface border-2 border-outline-variant !h-12 rounded-2xl w-24 shrink-0">
                       <SelectValue />
                     </SelectTrigger>

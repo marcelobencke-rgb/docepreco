@@ -527,7 +527,7 @@ export const RecipeCatalog = () => {
         </div>
         <div className="flex gap-4 w-full md:w-auto">
           <div className="w-full md:w-48">
-            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+            <Select value={categoryFilter} onValueChange={(val) => setCategoryFilter(val || 'todas')}>
               <SelectTrigger className="bg-surface border-2 border-outline-variant font-body-md rounded-2xl !h-12 w-full">
                 <SelectValue placeholder="Todas as categorias" />
               </SelectTrigger>
@@ -539,7 +539,7 @@ export const RecipeCatalog = () => {
             </Select>
           </div>
           <div className="w-full md:w-48">
-            <Select value={sortOrder} onValueChange={setSortOrder}>
+            <Select value={sortOrder} onValueChange={(val) => setSortOrder(val || 'recentes')}>
               <SelectTrigger className="bg-surface border-2 border-outline-variant font-body-md rounded-2xl !h-12 w-full">
                 <SelectValue placeholder="Mais recentes" />
               </SelectTrigger>
