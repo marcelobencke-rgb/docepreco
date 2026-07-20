@@ -229,7 +229,7 @@ export const Pricing = () => {
                 setSavedPrice('');
                 setActiveTab('calculadora');
               }}
-              className="flex items-center justify-center gap-2 bg-[#9F402D] text-white font-bold text-[13px] px-4 py-2.5 rounded-[1.25rem] hover:bg-[#8A3322] active:scale-95 transition-all shadow-[0_4px_12px_rgba(159,64,45,0.2)]"
+              className="flex items-center justify-center gap-2 bg-primary text-white font-bold text-[13px] px-4 py-2.5 rounded-[1.25rem] hover:bg-primary/90 active:scale-95 transition-all shadow-[0_4px_12px_rgba(159,64,45,0.2)]"
             >
               <span className="material-symbols-outlined text-[18px]">calculate</span>
               Nova Precificação
@@ -243,18 +243,18 @@ export const Pricing = () => {
         <button
           type="button"
           onClick={() => setActiveTab('listagem')}
-          className={`pb-3 font-label-md uppercase tracking-wider relative transition-colors whitespace-nowrap ${activeTab === 'listagem' ? 'text-[#9F402D]' : 'text-on-surface-variant hover:text-on-surface'}`}
+          className={`pb-3 font-label-md uppercase tracking-wider relative transition-colors whitespace-nowrap ${activeTab === 'listagem' ? 'text-primary' : 'text-on-surface-variant hover:text-on-surface'}`}
         >
           Minhas Precificações
-          {activeTab === 'listagem' && <div className="absolute bottom-[-2px] left-0 w-full h-[2px] bg-[#9F402D] rounded-t-full"></div>}
+          {activeTab === 'listagem' && <div className="absolute bottom-[-2px] left-0 w-full h-[2px] bg-primary rounded-t-full"></div>}
         </button>
         <button
           type="button"
           onClick={() => setActiveTab('calculadora')}
-          className={`pb-3 font-label-md uppercase tracking-wider relative transition-colors whitespace-nowrap ${activeTab === 'calculadora' ? 'text-[#9F402D]' : 'text-on-surface-variant hover:text-on-surface'}`}
+          className={`pb-3 font-label-md uppercase tracking-wider relative transition-colors whitespace-nowrap ${activeTab === 'calculadora' ? 'text-primary' : 'text-on-surface-variant hover:text-on-surface'}`}
         >
           Calculadora
-          {activeTab === 'calculadora' && <div className="absolute bottom-[-2px] left-0 w-full h-[2px] bg-[#9F402D] rounded-t-full"></div>}
+          {activeTab === 'calculadora' && <div className="absolute bottom-[-2px] left-0 w-full h-[2px] bg-primary rounded-t-full"></div>}
         </button>
       </div>
 
@@ -332,7 +332,7 @@ export const Pricing = () => {
                   <div className="flex flex-row items-center gap-3 shrink-0 w-full lg:w-auto justify-between lg:justify-end pt-4 lg:pt-0 border-t border-dashed border-surface-container lg:border-t-0">
                     <div className="bg-[#FDF0EC] border border-[#F6DED8] rounded-xl px-4 py-2 flex flex-col items-center justify-center min-w-[120px]">
                       <span className="text-[10px] font-bold text-[#DF7159] tracking-wider uppercase">{pricing.saved_price ? 'Preço Definido' : 'Preço Sugerido'}</span>
-                      <strong className="text-[18px] font-display-md text-[#9F402D]">
+                      <strong className="text-[18px] font-display-md text-primary">
                         {(pricing.saved_price || pricing.suggested_price).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                       </strong>
                     </div>
@@ -347,7 +347,7 @@ export const Pricing = () => {
                           setSavedPrice(pricing.saved_price ? formatCurrencyInput(pricing.saved_price) : '');
                           setActiveTab('calculadora');
                         }}
-                        className="bg-white text-[#87655F] font-bold text-[13px] px-4 py-2.5 rounded-xl hover:bg-[#FDF0EC] hover:text-[#9F402D] active:scale-95 transition-all border border-surface-container flex items-center gap-2"
+                        className="bg-white text-[#87655F] font-bold text-[13px] px-4 py-2.5 rounded-xl hover:bg-[#FDF0EC] hover:text-primary active:scale-95 transition-all border border-surface-container flex items-center gap-2"
                       >
                         <span className="material-symbols-outlined text-[16px]">edit</span>
                         <span className="hidden sm:inline">Editar</span>
@@ -556,7 +556,7 @@ export const Pricing = () => {
                 <button 
                   onClick={handleSavePricing}
                   disabled={saving}
-                  className="w-full md:w-auto shrink-0 flex items-center justify-center gap-2 bg-[#9F402D] text-white font-bold text-[14px] px-8 py-3.5 rounded-[1.25rem] hover:bg-[#8A3322] active:scale-95 transition-all shadow-[0_4px_12px_rgba(159,64,45,0.2)] disabled:opacity-50 h-12 mt-6 md:mt-0"
+                  className="w-full md:w-auto shrink-0 flex items-center justify-center gap-2 bg-primary text-white font-bold text-[14px] px-8 py-3.5 rounded-[1.25rem] hover:bg-primary/90 active:scale-95 transition-all shadow-[0_4px_12px_rgba(159,64,45,0.2)] disabled:opacity-50 h-12 mt-6 md:mt-0"
                 >
                   <span className="material-symbols-outlined text-[20px]">{saving ? 'sync' : 'save'}</span>
                   {saving ? 'Salvando...' : 'Salvar Precificação'}

@@ -1,30 +1,30 @@
 ---
 name: Sugar & Spice
 colors:
-  surface: '#fff8f6'
+  surface: '#faf0ed'
   surface-dim: '#e9d6d2'
-  surface-bright: '#fff8f6'
+  surface-bright: '#faf0ed'
   surface-container-lowest: '#ffffff'
   surface-container-low: '#fff0ee'
-  surface-container: '#fdeae6'
-  surface-container-high: '#f8e4e0'
-  surface-container-highest: '#f2deda'
-  on-surface: '#231917'
-  on-surface-variant: '#56423e'
+  surface-container: '#f1dfdb'
+  surface-container-high: '#e8d5d1'
+  surface-container-highest: '#e8d5d1'
+  on-surface: '#4a2b23'
+  on-surface-variant: '#8c6b65'
   inverse-surface: '#392e2b'
   inverse-on-surface: '#ffede9'
   outline: '#89726d'
-  outline-variant: '#ddc0ba'
-  surface-tint: '#9f402d'
-  primary: '#9f402d'
+  outline-variant: '#d2b7b0'
+  surface-tint: '#e87a8c'
+  primary: '#e87a8c'
   on-primary: '#ffffff'
-  primary-container: '#e2725b'
-  on-primary-container: '#5a0d02'
+  primary-container: '#f8b8c4'
+  on-primary-container: '#4a0b16'
   inverse-primary: '#ffb4a5'
-  secondary: '#7a5642'
+  secondary: '#4a2b23'
   on-secondary: '#ffffff'
-  secondary-container: '#fecdb4'
-  on-secondary-container: '#795541'
+  secondary-container: '#d2b7b0'
+  on-secondary-container: '#2c140d'
   tertiary: '#6e5d00'
   on-tertiary: '#ffffff'
   tertiary-container: '#c1ab47'
@@ -45,9 +45,9 @@ colors:
   tertiary-fixed-dim: '#dec65f'
   on-tertiary-fixed: '#221b00'
   on-tertiary-fixed-variant: '#534600'
-  background: '#fff8f6'
-  on-background: '#231917'
-  surface-variant: '#f2deda'
+  background: '#faf0ed'
+  on-background: '#4a2b23'
+  surface-variant: '#e8d5d1'
 typography:
   display-lg:
     fontFamily: Comfortaa
@@ -119,9 +119,9 @@ The aesthetic combines **Minimalism** with **Tactile / Skeuomorphic** elements. 
 
 ## Colors
 
-The palette centers on a warm, earthy foundation of Terracotta and Dusty Rose, providing a sophisticated backdrop that feels grounded yet soft. To inject energy and playfulness, a vibrant Sunny Yellow acts as the primary action accent, while a Soft Mint provides a cooling contrast for secondary highlights and success states.
+The palette centers on a cheerful, sweet foundation of Warm Pink and Dark Chocolate Brown, drawing direct inspiration from the "Docepreço" logo. This provides a soft, sophisticated backdrop that feels grounded yet playful. To inject energy and playfulness, a vibrant Sunny Yellow acts as the primary action accent, while a Soft Mint provides a cooling contrast for secondary highlights and success states.
 
-The background is a creamy off-white (`#FFF9F5`) to maintain the "premium" feel while avoiding the harshness of pure white. Surfaces should prioritize these warm tones, using the yellow and mint sparingly to draw attention to interactive elements or celebratory feedback.
+The background is a creamy off-white (`#FAF0ED`) to maintain the "premium" feel while avoiding the harshness of pure white. Surfaces should prioritize these warm tones, using the yellow and mint sparingly to draw attention to interactive elements or celebratory feedback.
 
 ## Typography
 

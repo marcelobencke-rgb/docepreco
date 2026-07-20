@@ -37,6 +37,7 @@ function App() {
             <Route path="fichas-tecnicas" element={<Recipes />} />
             <Route path="receitas" element={<RecipeCatalog />} />
             <Route path="fichas-tecnicas/:id" element={<RecipeForm />} />
+            <Route path="receitas/:id" element={<RecipeForm />} />
             <Route path="precificacao" element={<Pricing />} />
             <Route path="configuracoes" element={<Settings />} />
           </Route>

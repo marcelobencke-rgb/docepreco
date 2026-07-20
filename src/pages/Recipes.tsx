@@ -57,7 +57,7 @@ export const Recipes = () => {
         </div>
         <div className="flex items-center gap-2">
           <Link to="/fichas-tecnicas/nova">
-            <button className="flex items-center justify-center gap-2 bg-[#9F402D] text-white font-bold text-[13px] px-4 py-2.5 rounded-[1.25rem] hover:bg-[#8A3322] active:scale-95 transition-all shadow-[0_4px_12px_rgba(159,64,45,0.2)]">
+            <button className="flex items-center justify-center gap-2 bg-primary text-white font-bold text-[13px] px-4 py-2.5 rounded-[1.25rem] hover:bg-primary/90 active:scale-95 transition-all shadow-[0_4px_12px_rgba(159,64,45,0.2)]">
               <span className="material-symbols-outlined text-[18px]">add_circle</span>
               Nova Ficha Técnica
             </button>

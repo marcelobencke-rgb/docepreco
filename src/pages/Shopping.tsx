@@ -230,18 +230,33 @@ export const Shopping = () => {
     setListItems(listItems.map(i => i.id === item.id ? { ...i, purchased: newVal } : i));
   };
   
-  const updateItemPrice = async (itemId: string, newPrice: string) => {
+  const updateItemPrice = (itemId: string, newPrice: string) => {
     if (selectedList?.status === 'completed') return;
-    const val = parseCurrencyInput(newPrice);
-    await supabase.from('shopping_list_items').update({ price: val }).eq('id', itemId);
-    setListItems(listItems.map(i => i.id === itemId ? { ...i, price: val } : i));
+    
+    // Parse value handling string from input directly
+    // If it's empty, we set it to 0
+    let cleanString = newPrice.replace(/\D/g, '');
+    let val = 0;
+    if (cleanString !== '') {
+      val = parseInt(cleanString, 10) / 100;
+    }
+    
+    // Update local state immediately for fast typing
+    setListItems(current => current.map(i => i.id === itemId ? { ...i, price: val } : i));
+    
+    // Update DB in background
+    supabase.from('shopping_list_items').update({ price: val }).eq('id', itemId).then();
   };
 
-  const updateItemQty = async (itemId: string, newQty: string) => {
+  const updateItemQty = (itemId: string, newQty: string) => {
     if (selectedList?.status === 'completed') return;
     const val = parseFloat(newQty) || 0;
-    await supabase.from('shopping_list_items').update({ quantity: val }).eq('id', itemId);
-    setListItems(listItems.map(i => i.id === itemId ? { ...i, quantity: val } : i));
+    
+    // Update local state immediately
+    setListItems(current => current.map(i => i.id === itemId ? { ...i, quantity: val } : i));
+    
+    // Update DB in background
+    supabase.from('shopping_list_items').update({ quantity: val }).eq('id', itemId).then();
   };
 
   const calculateBaseCost = (purchaseQty: number, purchasePrice: number, unit: string) => {
@@ -333,7 +348,7 @@ export const Shopping = () => {
         {!selectedList && (
           <button 
             onClick={() => setIsCreateOpen(true)}
-            className="flex items-center justify-center gap-2 bg-[#9F402D] text-white font-bold text-[13px] px-4 py-2.5 rounded-[1.25rem] hover:bg-[#8A3322] active:scale-95 transition-all shadow-[0_4px_12px_rgba(159,64,45,0.2)]"
+            className="flex items-center justify-center gap-2 bg-primary text-white font-bold text-[13px] px-4 py-2.5 rounded-[1.25rem] hover:bg-primary/90 active:scale-95 transition-all shadow-[0_4px_12px_rgba(159,64,45,0.2)]"
           >
             <span className="material-symbols-outlined text-[18px]">add</span>
             Nova Lista
@@ -412,7 +427,7 @@ export const Shopping = () => {
                   className="bg-surface-container-lowest rounded-3xl p-6 cursor-pointer hover:shadow-float hover:-translate-y-1 transition-all border-2 border-transparent hover:border-primary-container group relative overflow-hidden"
                 >
                   <div className="flex items-start justify-between mb-4">
-                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${list.status === 'completed' ? 'bg-[#e2f1e5] text-[#2e6d3d]' : 'bg-[#faece8] text-[#9F402D]'}`}>
+                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${list.status === 'completed' ? 'bg-[#e2f1e5] text-[#2e6d3d]' : 'bg-[#faece8] text-primary'}`}>
                       <span className="material-symbols-outlined">{list.status === 'completed' ? 'check_circle' : 'shopping_basket'}</span>
                     </div>
                     <span className={`text-[10px] uppercase font-bold tracking-wider px-2 py-1 rounded-full ${list.status === 'completed' ? 'bg-[#e2f1e5] text-[#2e6d3d]' : 'bg-surface-container-high text-on-surface-variant'}`}>
@@ -588,7 +603,7 @@ export const Shopping = () => {
                       </div>
                       <div className="col-span-2 flex justify-end">
                         {selectedList.status === 'completed' ? (
-                          <span className="font-bold text-[#9F402D]">
+                          <span className="font-bold text-primary">
                             {Number(item.price).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                           </span>
                         ) : (
@@ -672,7 +687,7 @@ export const Shopping = () => {
             </div>
             <div className="flex justify-end gap-2">
               <button type="button" onClick={() => setIsCreateOpen(false)} className="px-4 py-2 hover:bg-surface-container rounded-full">Cancelar</button>
-              <button type="submit" className="px-4 py-2 bg-primary text-white font-bold rounded-full hover:bg-[#8A3322]">Criar</button>
+              <button type="submit" className="px-4 py-2 bg-primary text-white font-bold rounded-full hover:bg-primary/90">Criar</button>
             </div>
           </form>
         </DialogContent>
@@ -692,7 +707,9 @@ export const Shopping = () => {
               <Label>Selecione uma receita</Label>
               <Select value={selectedRecipeId} onValueChange={(val) => setSelectedRecipeId(val || '')}>
                 <SelectTrigger className="bg-surface border-2 border-outline-variant h-12 rounded-2xl">
-                  <SelectValue placeholder="Escolha a receita..." />
+                  <SelectValue placeholder="Escolha a receita...">
+                    {recipes.find(r => r.id === selectedRecipeId)?.name || 'Escolha a receita...'}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent alignItemWithTrigger={false}>
                   {recipes.map(r => (
@@ -707,7 +724,7 @@ export const Shopping = () => {
                 type="button" 
                 onClick={handleAddFromRecipe} 
                 disabled={!selectedRecipeId || addingRecipe}
-                className="px-4 py-2 bg-primary text-white font-bold rounded-full hover:bg-[#8A3322] font-label-md disabled:opacity-50"
+                className="px-4 py-2 bg-primary text-white font-bold rounded-full hover:bg-primary/90 font-label-md disabled:opacity-50"
               >
                 {addingRecipe ? 'Adicionando...' : 'Adicionar Itens'}
               </button>

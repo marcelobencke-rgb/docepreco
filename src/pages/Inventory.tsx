@@ -254,7 +254,7 @@ export const Inventory = () => {
           {activeTab === 'estoque' && (
             <button 
               onClick={() => handleOpenDialog()}
-              className="flex items-center justify-center gap-2 bg-[#9F402D] text-white font-bold text-[13px] px-4 py-2.5 rounded-[1.25rem] hover:bg-[#8A3322] active:scale-95 transition-all shadow-[0_4px_12px_rgba(159,64,45,0.2)]"
+              className="flex items-center justify-center gap-2 bg-primary text-white font-bold text-[13px] px-4 py-2.5 rounded-[1.25rem] hover:bg-primary/90 active:scale-95 transition-all shadow-[0_4px_12px_rgba(159,64,45,0.2)]"
             >
               <span className="material-symbols-outlined text-[18px]">add</span>
               Novo Item
@@ -274,17 +274,17 @@ export const Inventory = () => {
       <div className="flex gap-6 border-b-2 border-surface-container mb-6">
         <button 
           onClick={() => { setActiveTab('estoque'); setSearchTerm(''); setCategoryFilter('todas'); setSortOrder('recentes'); setSupplierFilter('todos'); }} 
-          className={`pb-3 font-label-md uppercase tracking-wider relative transition-colors ${activeTab === 'estoque' ? 'text-[#9F402D]' : 'text-on-surface-variant hover:text-on-surface'}`}
+          className={`pb-3 font-label-md uppercase tracking-wider relative transition-colors ${activeTab === 'estoque' ? 'text-primary' : 'text-on-surface-variant hover:text-on-surface'}`}
         >
           Estoque Atual
-          {activeTab === 'estoque' && <div className="absolute bottom-[-2px] left-0 w-full h-[2px] bg-[#9F402D] rounded-t-full"></div>}
+          {activeTab === 'estoque' && <div className="absolute bottom-[-2px] left-0 w-full h-[2px] bg-primary rounded-t-full"></div>}
         </button>
         <button 
           onClick={() => { setActiveTab('movimentacoes'); setSearchTerm(''); setCategoryFilter('todas'); setSortOrder('recentes'); setSupplierFilter('todos'); }} 
-          className={`pb-3 font-label-md uppercase tracking-wider relative transition-colors ${activeTab === 'movimentacoes' ? 'text-[#9F402D]' : 'text-on-surface-variant hover:text-on-surface'}`}
+          className={`pb-3 font-label-md uppercase tracking-wider relative transition-colors ${activeTab === 'movimentacoes' ? 'text-primary' : 'text-on-surface-variant hover:text-on-surface'}`}
         >
           Extrato de Movimentações
-          {activeTab === 'movimentacoes' && <div className="absolute bottom-[-2px] left-0 w-full h-[2px] bg-[#9F402D] rounded-t-full"></div>}
+          {activeTab === 'movimentacoes' && <div className="absolute bottom-[-2px] left-0 w-full h-[2px] bg-primary rounded-t-full"></div>}
         </button>
       </div>
 
@@ -384,14 +384,19 @@ export const Inventory = () => {
                     <div className="w-10 h-10 rounded-full bg-secondary-fixed flex items-center justify-center shrink-0 shadow-inner">
                       <span className="material-symbols-outlined text-secondary text-[16px]">{ing.category === 'Embalagem' ? 'package' : 'kitchen'}</span>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-0.5">
-                        <h3 className="text-[16px] text-[#3e1d15] font-medium truncate" title={ing.name}>{ing.name}</h3>
+                    <div className="flex flex-col overflow-hidden w-full">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h3 className="font-headline-sm text-[16px] text-[#3e1d15] truncate" title={ing.name}>{ing.name}</h3>
                         <span className="px-2 py-0.5 bg-surface rounded-md text-[9px] font-bold text-on-surface-variant uppercase tracking-wider border border-outline-variant/30">{ing.category}</span>
+                        {(Number(ing.min_stock_limit) > 0 && Number(ing.current_stock) <= Number(ing.min_stock_limit)) && (
+                          <span className="material-symbols-outlined text-error text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }} title="Estoque baixo">warning</span>
+                        )}
                       </div>
-                      <p className="text-[13px] text-[#87655F] truncate">
-                        {ing.suppliers?.name ? `Fornecedor: ${ing.suppliers.name}` : 'Sem fornecedor listado'}
-                      </p>
+                      {ing.suppliers?.name && (
+                        <p className="text-[13px] text-[#87655F] truncate">
+                          Fornecedor: {ing.suppliers.name}
+                        </p>
+                      )}
                     </div>
                   </div>
 
@@ -399,14 +404,27 @@ export const Inventory = () => {
                   <div className="flex flex-wrap md:flex-nowrap items-center gap-4 md:gap-8 w-full md:w-auto px-0 md:px-6 relative z-10">
                     <div className="text-right border-l-2 border-dashed border-surface-container-high pl-4 md:pl-6">
                       <p className="text-[10px] text-[#87655F] uppercase tracking-wider mb-0.5 font-medium">Estoque Atual</p>
-                      <span className={`text-[15px] font-bold ${Number(ing.current_stock) <= 0 ? 'text-error' : 'text-[#3e1d15]'}`}>
+                      <span className={`text-[15px] font-bold ${(Number(ing.min_stock_limit) > 0 && Number(ing.current_stock) <= Number(ing.min_stock_limit)) ? 'text-error' : 'text-[#3e1d15]'}`}>
                         {Number(ing.current_stock).toLocaleString('pt-BR')}
                         <span className="text-[11px] text-[#87655F]/70 ml-1">{getBaseUnitLabel(ing.purchase_unit)}</span>
                       </span>
                     </div>
+                    <div className="text-right border-l-2 border-dashed border-surface-container-high pl-4 md:pl-6 hidden sm:block">
+                      <p className="text-[10px] text-[#87655F] uppercase tracking-wider mb-0.5 font-medium">Estoque Mínimo</p>
+                      <span className="text-[15px] font-bold text-[#87655F]">
+                        {Number(ing.min_stock_limit) > 0 ? (
+                          <>
+                            {Number(ing.min_stock_limit).toLocaleString('pt-BR')}
+                            <span className="text-[11px] text-[#87655F]/70 ml-1">{getBaseUnitLabel(ing.purchase_unit)}</span>
+                          </>
+                        ) : (
+                          <span className="text-[12px] font-normal italic">Não controlado</span>
+                        )}
+                      </span>
+                    </div>
                     <div className="text-right border-l-2 border-dashed border-surface-container-high pl-4 md:pl-6">
                       <p className="text-[10px] text-[#87655F] uppercase tracking-wider mb-0.5 font-medium">Custo Base</p>
-                      <span className="text-[14px] text-[#9F402D] font-bold">
+                      <span className="text-[14px] text-primary font-bold">
                         {Number(ing.base_unit_cost).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         <span className="text-[11px] text-[#87655F]/70 ml-1">/{getBaseUnitLabel(ing.purchase_unit)}</span>
                       </span>
@@ -480,7 +498,7 @@ export const Inventory = () => {
               filteredMovements.map(mov => (
                 <div key={mov.id} className="flex justify-between items-center bg-surface-container-lowest p-5 rounded-2xl shadow-sm border border-surface-container hover:shadow-md transition-shadow group">
                   <div className="flex items-center gap-4">
-                     <div className={`w-12 h-12 rounded-full flex items-center justify-center shrink-0 shadow-sm ${mov.type === 'in' ? 'bg-[#9F402D] text-white' : 'bg-[#2e6d3d] text-white'}`}>
+                     <div className={`w-12 h-12 rounded-full flex items-center justify-center shrink-0 shadow-sm ${mov.type === 'in' ? 'bg-primary text-white' : 'bg-[#2e6d3d] text-white'}`}>
                        <span className="material-symbols-outlined">{mov.type === 'in' ? 'arrow_downward' : 'arrow_upward'}</span>
                      </div>
                      <div>
@@ -492,7 +510,7 @@ export const Inventory = () => {
                      </div>
                   </div>
                   <div className="flex flex-col items-end">
-                    <div className={`font-bold text-lg ${mov.type === 'in' ? 'text-[#9F402D]' : 'text-[#2e6d3d]'}`}>
+                    <div className={`font-bold text-lg ${mov.type === 'in' ? 'text-primary' : 'text-[#2e6d3d]'}`}>
                       {mov.type === 'in' ? '+' : '-'}{mov.quantity} <span className="text-[12px] font-medium opacity-80">{getBaseUnitLabel(mov.ingredients?.purchase_unit || '')}</span>
                     </div>
                     {mov.type === 'in' && mov.price && (
@@ -643,7 +661,7 @@ export const Inventory = () => {
               <button 
                 type="submit" 
                 disabled={isSavingMovement}
-                className="px-6 py-3 bg-[#9F402D] text-white font-bold text-[13px] rounded-full hover:bg-[#8A3322] active:scale-95 transition-all flex items-center gap-2"
+                className="px-6 py-3 bg-primary text-white font-bold text-[13px] rounded-full hover:bg-primary/90 active:scale-95 transition-all flex items-center gap-2"
               >
                 {isSavingMovement ? 'Salvando...' : 'Confirmar'}
               </button>
@@ -664,7 +682,7 @@ export const Inventory = () => {
               {selectedLinkedRecipes.map((ri, idx) => (
                 <div key={idx} className="flex justify-between items-center bg-surface-container-low p-3 rounded-xl border border-surface-container">
                   <span className="font-medium text-[#3e1d15]">{ri.recipes?.name}</span>
-                  <span className="text-[13px] text-[#9F402D] font-bold">{ri.quantity_used} {getBaseUnitLabel(selectedLinkedIngredientUnit)}</span>
+                  <span className="text-[13px] text-primary font-bold">{ri.quantity_used} {getBaseUnitLabel(selectedLinkedIngredientUnit)}</span>
                 </div>
               ))}
             </div>

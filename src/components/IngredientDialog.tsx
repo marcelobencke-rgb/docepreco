@@ -15,6 +15,7 @@ export type Ingredient = {
   purchase_price: number;
   base_unit_cost: number;
   current_stock: number;
+  min_stock_limit: number;
   category: string;
   supplier_id: string | null;
   suppliers?: { name: string } | null;
@@ -37,6 +38,7 @@ export const IngredientDialog = ({ open, onOpenChange, ingredientToEdit, onSave 
   const [purchaseUnit, setPurchaseUnit] = useState('kg');
 
   const [category, setCategory] = useState('Ingrediente');
+  const [minStockLimit, setMinStockLimit] = useState('0');
   
   const [saving, setSaving] = useState(false);
 
@@ -46,10 +48,17 @@ export const IngredientDialog = ({ open, onOpenChange, ingredientToEdit, onSave 
         setName(ingredientToEdit.name);
         setPurchaseUnit(ingredientToEdit.purchase_unit);
         setCategory(ingredientToEdit.category || 'Ingrediente');
+        
+        let initialMinStock = ingredientToEdit.min_stock_limit || 0;
+        if (ingredientToEdit.purchase_unit === 'kg' || ingredientToEdit.purchase_unit === 'litro') {
+          initialMinStock = initialMinStock / 1000;
+        }
+        setMinStockLimit(initialMinStock.toString());
       } else {
         setName('');
         setPurchaseUnit('kg');
         setCategory('Ingrediente');
+        setMinStockLimit('0');
       }
     }
   }, [open, ingredientToEdit, user]);
@@ -63,11 +72,17 @@ export const IngredientDialog = ({ open, onOpenChange, ingredientToEdit, onSave 
 
     setSaving(true);
 
+    let finalMinStock = parseFloat(minStockLimit) || 0;
+    if (purchaseUnit === 'kg' || purchaseUnit === 'litro') {
+      finalMinStock = finalMinStock * 1000;
+    }
+
     let ingredientData: any = {
       user_id: user.id,
       name,
       category,
       purchase_unit: purchaseUnit,
+      min_stock_limit: finalMinStock,
       last_updated: new Date().toISOString(),
     };
 
@@ -141,23 +156,38 @@ export const IngredientDialog = ({ open, onOpenChange, ingredientToEdit, onSave 
               />
             </div>
           </div>
-          <div className="space-y-2">
-            <Label className="text-on-surface">Unidade</Label>
-            <Select value={purchaseUnit} onValueChange={(val: string | null) => setPurchaseUnit(val || 'kg')}>
-              <SelectTrigger className="bg-surface border-2 border-outline-variant font-body-md rounded-2xl h-12">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="kg">Quilo (kg)</SelectItem>
-                <SelectItem value="g">Grama (g)</SelectItem>
-                <SelectItem value="litro">Litro (L)</SelectItem>
-                <SelectItem value="ml">Mililitro (ml)</SelectItem>
-                <SelectItem value="unidade">Unidade</SelectItem>
-                <SelectItem value="duzia">Dúzia</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label className="text-on-surface">Unidade</Label>
+              <Select value={purchaseUnit} onValueChange={(val: string | null) => setPurchaseUnit(val || 'kg')}>
+                <SelectTrigger className="bg-surface border-2 border-outline-variant font-body-md rounded-2xl h-12">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="kg">Quilo (kg)</SelectItem>
+                  <SelectItem value="g">Grama (g)</SelectItem>
+                  <SelectItem value="litro">Litro (L)</SelectItem>
+                  <SelectItem value="ml">Mililitro (ml)</SelectItem>
+                  <SelectItem value="unidade">Unidade</SelectItem>
+                  <SelectItem value="duzia">Dúzia</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="min_stock_limit" className="text-on-surface">Estoque Mínimo</Label>
+              <Input
+                id="min_stock_limit"
+                type="number"
+                min="0"
+                step="0.01"
+                required
+                className="bg-surface border-2 border-outline-variant font-body-md rounded-2xl h-12"
+                value={minStockLimit}
+                onChange={(e) => setMinStockLimit(e.target.value)}
+              />
+            </div>
           </div>
-          <button type="submit" disabled={saving} className="w-full flex items-center justify-center gap-2 bg-[#9F402D] text-white font-bold text-[13px] py-3 rounded-[1.25rem] hover:bg-[#8A3322] active:scale-95 transition-all shadow-[0_4px_12px_rgba(159,64,45,0.2)] mt-4 disabled:opacity-50">
+          <button type="submit" disabled={saving} className="w-full flex items-center justify-center gap-2 bg-primary text-white font-bold text-[13px] py-3 rounded-[1.25rem] hover:bg-primary/90 active:scale-95 transition-all shadow-[0_4px_12px_rgba(159,64,45,0.2)] mt-4 disabled:opacity-50">
             <span className="material-symbols-outlined text-[18px]">{saving ? 'sync' : 'save'}</span>
             {ingredientToEdit ? 'Salvar Ingrediente' : 'Salvar & Selecionar'}
           </button>

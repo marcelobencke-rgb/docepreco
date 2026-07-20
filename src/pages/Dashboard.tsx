@@ -6,7 +6,8 @@ import { useAuth } from '@/contexts/AuthContext';
 export const Dashboard = () => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState({ ingredients: 0, recipes: 0 });
+  const [fabOpen, setFabOpen] = useState(false);
+  const [stats, setStats] = useState({ ingredients: 0, recipes: 0, pricings: 0, lowStock: 0 });
   const [recentRecipes, setRecentRecipes] = useState<any[]>([]);
 
   useEffect(() => {
@@ -19,14 +20,32 @@ export const Dashboard = () => {
         .eq('user_id', user.id)
         .is('deleted_at', null);
 
+      const { data: allIngredients } = await supabase
+        .from('ingredients')
+        .select('current_stock, min_stock_limit')
+        .eq('user_id', user.id)
+        .is('deleted_at', null);
+      
+      const lowStockCount = allIngredients?.filter(i => {
+        const min = Number(i.min_stock_limit);
+        return min > 0 && Number(i.current_stock) <= min;
+      }).length || 0;
+
       const { count: recCount } = await supabase
         .from('recipes')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id);
+
+      const { count: pricingsCount } = await supabase
+        .from('pricings')
         .select('*', { count: 'exact', head: true })
         .eq('user_id', user.id);
 
       setStats({
         ingredients: ingCount || 0,
         recipes: recCount || 0,
+        pricings: pricingsCount || 0,
+        lowStock: lowStockCount
       });
 
       const { data: recent } = await supabase
@@ -65,104 +84,150 @@ export const Dashboard = () => {
       </header>
 
       {/* KPI Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        {/* Card 1: Total de Ingredientes */}
-        <div className="bg-white p-4 rounded-[1.5rem] flex flex-col justify-between hover:-translate-y-1 transition-transform aspect-[1.3] shadow-[0_4px_20px_rgba(159,64,45,0.05)]">
-          <div className="flex justify-between items-start mb-2">
-            <div className="w-8 h-8 rounded-full bg-[#A9A450] flex items-center justify-center text-white">
-              <span className="material-symbols-outlined text-[18px]">kitchen</span>
-            </div>
-          </div>
-          <div>
-            <p className="font-label-md text-[11px] text-[#87655F] mb-1">Ingredientes</p>
-            <h3 className="font-display-lg text-[22px] text-on-surface leading-none">{stats.ingredients}</h3>
-          </div>
-        </div>
-
-        {/* Card 2: Fichas Técnicas */}
-        <div className="bg-white p-4 rounded-[1.5rem] flex flex-col justify-between hover:-translate-y-1 transition-transform aspect-[1.3] shadow-[0_4px_20px_rgba(159,64,45,0.05)]">
-          <div className="flex justify-between items-start mb-2">
-            <div className="w-8 h-8 rounded-full bg-[#F8E4E0] flex items-center justify-center text-primary">
-              <span className="material-symbols-outlined text-[18px]">menu_book</span>
-            </div>
-          </div>
-          <div>
-            <p className="font-label-md text-[11px] text-[#87655F] mb-1">Receitas</p>
-            <h3 className="font-display-lg text-[22px] text-on-surface leading-none">{stats.recipes}</h3>
-          </div>
-        </div>
-
-        {/* Card 3: Precificação Rápida */}
-        <div className="bg-white p-4 rounded-[1.5rem] flex flex-col justify-between hover:-translate-y-1 transition-transform aspect-[1.3] shadow-[0_4px_20px_rgba(159,64,45,0.05)] cursor-pointer">
-          <div className="flex justify-between items-start mb-2">
-            <div className="w-8 h-8 rounded-full bg-[#F8E4E0] flex items-center justify-center text-primary">
-              <span className="material-symbols-outlined text-[18px]">payments</span>
-            </div>
-          </div>
-          <div>
-            <p className="font-label-md text-[11px] text-[#87655F] mb-1">Precificação</p>
-            <h3 className="font-display-lg text-[16px] text-on-surface leading-tight">Calculadora</h3>
-          </div>
-        </div>
-
-        {/* Card 4: Dicas */}
-        <div className="bg-[#DF7159] p-4 rounded-[1.5rem] flex flex-col justify-between hover:-translate-y-1 transition-transform aspect-[1.3] shadow-[0_8px_24px_rgba(223,113,89,0.3)]">
-          <div className="flex justify-between items-start mb-2">
-            <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-[#DF7159]">
-              <span className="material-symbols-outlined text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>lightbulb</span>
-            </div>
-            <span className="bg-white text-[#DF7159] px-2 py-0.5 rounded-full font-bold text-[10px]">Novo</span>
-          </div>
-          <div>
-            <p className="font-label-md text-[11px] text-[#F9D5CE] mb-1">Dica do Dia</p>
-            <h3 className="font-display-lg text-[16px] text-white leading-tight">Revise os Custos</h3>
-          </div>
-        </div>
-      </div>
-
-      {/* Recent Recipes */}
-      <div className="bg-white p-5 rounded-[1.5rem] shadow-[0_4px_20px_rgba(159,64,45,0.05)] mb-6">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="font-display-lg text-[18px] text-on-surface">Fichas Técnicas Recentes</h3>
-          <Link to="/fichas-tecnicas" className="text-[#DF7159] font-bold text-[12px] hover:underline">
-            Ver Todas
-          </Link>
-        </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {recentRecipes.length === 0 ? (
-            <p className="col-span-full text-on-surface-variant font-body-md py-6 text-center">
-              Nenhuma receita criada ainda. Que tal criar a primeira?
-            </p>
-          ) : (
-            recentRecipes.map(recipe => (
-              <Link to={`/fichas-tecnicas/${recipe.id}`} key={recipe.id} className="block group">
-                <div className="bg-[#FFF4F2] border-2 border-dashed border-[#EBB6AB] rounded-2xl overflow-hidden h-28 relative flex flex-col items-center justify-center transition-all group-hover:bg-[#FDECE9] group-hover:border-[#E3755C]">
-                  <span className="material-symbols-outlined text-2xl mb-1.5 text-[#B3523F]" style={{ fontVariationSettings: "'FILL' 1" }}>cake</span>
-                  <h4 className="font-label-md text-[12px] text-center px-4 truncate w-full text-[#5A281E]" title={recipe.name}>
-                    {recipe.name}
-                  </h4>
-                </div>
-              </Link>
-            ))
-          )}
+        {/* Card 1: Receitas Cadastradas */}
+        <Link to="/receitas" className="block outline-none">
+          <div className="bg-white p-4 lg:p-5 rounded-[1.5rem] flex items-center gap-4 hover:-translate-y-1 transition-transform shadow-[0_4px_20px_rgba(159,64,45,0.05)] cursor-pointer">
+            <div className="w-12 h-12 shrink-0 rounded-full bg-[#F8E4E0] flex items-center justify-center text-primary">
+              <span className="material-symbols-outlined text-[24px]">menu_book</span>
+            </div>
+            <div className="flex flex-col">
+              <h3 className="font-display-lg text-[24px] text-on-surface leading-none mb-1">{stats.recipes}</h3>
+              <p className="font-label-md text-[11px] text-[#87655F] leading-tight">Receitas<br/>Cadastradas</p>
+            </div>
+          </div>
+        </Link>
+
+        {/* Card 2: Ingredientes Cadastrados */}
+        <Link to="/inventario" className="block outline-none">
+          <div className="bg-white p-4 lg:p-5 rounded-[1.5rem] flex items-center gap-4 hover:-translate-y-1 transition-transform shadow-[0_4px_20px_rgba(159,64,45,0.05)] cursor-pointer">
+            <div className="w-12 h-12 shrink-0 rounded-full bg-[#FAEDCD] flex items-center justify-center text-[#A9A450]">
+              <span className="material-symbols-outlined text-[24px]">kitchen</span>
+            </div>
+            <div className="flex flex-col">
+              <h3 className="font-display-lg text-[24px] text-on-surface leading-none mb-1">{stats.ingredients}</h3>
+              <p className="font-label-md text-[11px] text-[#87655F] leading-tight">Ingredientes<br/>Cadastrados</p>
+            </div>
+          </div>
+        </Link>
+
+        {/* Card 3: Precificações Realizadas */}
+        <Link to="/precificacao" className="block outline-none">
+          <div className="bg-white p-4 lg:p-5 rounded-[1.5rem] flex items-center gap-4 hover:-translate-y-1 transition-transform shadow-[0_4px_20px_rgba(159,64,45,0.05)] cursor-pointer">
+            <div className="w-12 h-12 shrink-0 rounded-full bg-[#E8F3EC] flex items-center justify-center text-[#2E6D3D]">
+              <span className="material-symbols-outlined text-[24px]">payments</span>
+            </div>
+            <div className="flex flex-col">
+              <h3 className="font-display-lg text-[24px] text-on-surface leading-none mb-1">{stats.pricings}</h3>
+              <p className="font-label-md text-[11px] text-[#87655F] leading-tight">Precificações<br/>Realizadas</p>
+            </div>
+          </div>
+        </Link>
+
+        {/* Card 4: Estoque Baixo */}
+        <Link to="/inventario" className="block outline-none">
+          <div className={`p-4 lg:p-5 rounded-[1.5rem] flex items-center gap-4 hover:-translate-y-1 transition-transform cursor-pointer ${stats.lowStock > 0 ? 'bg-[#DF7159] shadow-[0_8px_24px_rgba(223,113,89,0.3)]' : 'bg-white shadow-[0_4px_20px_rgba(159,64,45,0.05)]'}`}>
+            <div className={`w-12 h-12 shrink-0 rounded-full flex items-center justify-center ${stats.lowStock > 0 ? 'bg-white text-[#DF7159]' : 'bg-[#F2F0F4] text-[#A39CA9]'}`}>
+              <span className="material-symbols-outlined text-[24px]" style={stats.lowStock > 0 ? { fontVariationSettings: "'FILL' 1" } : {}}>
+                {stats.lowStock > 0 ? 'warning' : 'inventory_2'}
+              </span>
+            </div>
+            <div className="flex flex-col">
+              <h3 className={`font-display-lg text-[24px] leading-none mb-1 ${stats.lowStock > 0 ? 'text-white' : 'text-on-surface'}`}>{stats.lowStock}</h3>
+              <p className={`font-label-md text-[11px] leading-tight ${stats.lowStock > 0 ? 'text-[#F9D5CE]' : 'text-[#87655F]'}`}>
+                {stats.lowStock === 1 ? 'Item com' : 'Itens com'}<br/>Estoque Baixo
+              </p>
+            </div>
+          </div>
+        </Link>
+      </div>
+
+      {/* Recent Recipes Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        {/* Fichas Técnicas Recentes */}
+        <div className="bg-white p-5 rounded-[1.5rem] shadow-[0_4px_20px_rgba(159,64,45,0.05)] flex flex-col">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="font-display-lg text-[18px] text-on-surface">Fichas Técnicas Recentes</h3>
+            <Link to="/fichas-tecnicas" className="text-[#DF7159] font-bold text-[12px] hover:underline">
+              Ver Todas
+            </Link>
+          </div>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {recentRecipes.length === 0 ? (
+              <p className="col-span-full text-on-surface-variant font-body-md py-6 text-center">
+                Nenhuma ficha técnica criada.
+              </p>
+            ) : (
+              recentRecipes.slice(0, 4).map(recipe => (
+                <Link to={`/fichas-tecnicas/${recipe.id}`} key={recipe.id} className="block group">
+                  <div className="bg-[#FFF4F2] border-2 border-dashed border-[#EBB6AB] rounded-2xl overflow-hidden h-28 relative flex flex-col items-center justify-center transition-all group-hover:bg-[#FDECE9] group-hover:border-[#E3755C]">
+                    <span className="material-symbols-outlined text-2xl mb-1.5 text-[#B3523F]" style={{ fontVariationSettings: "'FILL' 1" }}>menu_book</span>
+                    <h4 className="font-label-md text-[12px] text-center px-4 truncate w-full text-[#5A281E]" title={recipe.name}>
+                      {recipe.name}
+                    </h4>
+                  </div>
+                </Link>
+              ))
+            )}
+          </div>
+        </div>
+
+        {/* Receitas Recentes */}
+        <div className="bg-white p-5 rounded-[1.5rem] shadow-[0_4px_20px_rgba(159,64,45,0.05)] flex flex-col">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="font-display-lg text-[18px] text-on-surface">Receitas Recentes</h3>
+            <Link to="/receitas" className="text-[#DF7159] font-bold text-[12px] hover:underline">
+              Ver Todas
+            </Link>
+          </div>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {recentRecipes.length === 0 ? (
+              <p className="col-span-full text-on-surface-variant font-body-md py-6 text-center">
+                Nenhuma receita criada ainda.
+              </p>
+            ) : (
+              recentRecipes.slice(0, 4).map(recipe => (
+                <Link to={`/receitas`} key={`rec-${recipe.id}`} className="block group">
+                  <div className="bg-[#FFF4F2] border-2 border-dashed border-[#EBB6AB] rounded-2xl overflow-hidden h-28 relative flex flex-col items-center justify-center transition-all group-hover:bg-[#FDECE9] group-hover:border-[#E3755C]">
+                    <span className="material-symbols-outlined text-2xl mb-1.5 text-[#B3523F]" style={{ fontVariationSettings: "'FILL' 1" }}>cake</span>
+                    <h4 className="font-label-md text-[12px] text-center px-4 truncate w-full text-[#5A281E]" title={recipe.name}>
+                      {recipe.name}
+                    </h4>
+                  </div>
+                </Link>
+              ))
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Bottom Action Buttons */}
-      <div className="flex flex-col sm:flex-row gap-4 mt-auto">
-        <Link to="/ingredientes" className="flex-1">
-          <button className="w-full bg-[#F5DE6A] text-[#3D2C00] font-bold text-[13px] py-3 rounded-[1.25rem] shadow-[0_8px_24px_rgba(245,222,106,0.3)] flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all">
-            <span className="material-symbols-outlined text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>kitchen</span>
-            + Novo Ingrediente
-          </button>
-        </Link>
-        <Link to="/fichas-tecnicas/nova" className="flex-1">
-          <button className="w-full bg-[#9F402D] text-white font-bold text-[13px] py-3 rounded-[1.25rem] shadow-[0_8px_24px_rgba(159,64,45,0.3)] flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all">
-            <span className="material-symbols-outlined text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>menu_book</span>
-            + Criar Ficha Técnica
-          </button>
-        </Link>
+      {/* Floating Action Button (FAB) */}
+      <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3">
+        {fabOpen && (
+          <div className="flex flex-col gap-2 mb-2 items-end">
+            <Link to="/receitas/nova" className="flex items-center gap-3 bg-white px-5 py-3 rounded-full shadow-[0_4px_12px_rgba(0,0,0,0.1)] hover:scale-105 transition-all text-on-surface">
+              <span className="font-bold text-[14px]">Nova Receita</span>
+              <div className="w-8 h-8 rounded-full bg-[#DF7159] flex items-center justify-center text-white">
+                <span className="material-symbols-outlined text-[16px]">cake</span>
+              </div>
+            </Link>
+            <Link to="/fichas-tecnicas/nova" className="flex items-center gap-3 bg-white px-5 py-3 rounded-full shadow-[0_4px_12px_rgba(0,0,0,0.1)] hover:scale-105 transition-all text-on-surface">
+              <span className="font-bold text-[14px]">Nova Ficha Técnica</span>
+              <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white">
+                <span className="material-symbols-outlined text-[16px]">menu_book</span>
+              </div>
+            </Link>
+          </div>
+        )}
+        <button 
+          onClick={() => setFabOpen(!fabOpen)}
+          className={`w-14 h-14 rounded-full bg-primary text-white flex items-center justify-center shadow-[0_8px_24px_rgba(159,64,45,0.4)] hover:scale-105 active:scale-95 transition-all duration-300 ${fabOpen ? 'rotate-45 bg-[#8A3322]' : ''}`}
+        >
+          <span className="material-symbols-outlined text-[28px]">add</span>
+        </button>
       </div>
     </div>
   );

@@ -108,10 +108,10 @@ export const Suppliers = () => {
         </div>
         <div className="flex items-center gap-2">
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger>
+            <DialogTrigger asChild>
               <button 
                 onClick={() => handleOpenDialog()}
-                className="flex items-center justify-center gap-2 bg-[#9F402D] text-white font-bold text-[13px] px-4 py-2.5 rounded-[1.25rem] hover:bg-[#8A3322] active:scale-95 transition-all shadow-[0_4px_12px_rgba(159,64,45,0.2)]"
+                className="flex items-center justify-center gap-2 bg-primary text-white font-bold text-[13px] px-4 py-2.5 rounded-[1.25rem] hover:bg-primary/90 active:scale-95 transition-all shadow-[0_4px_12px_rgba(159,64,45,0.2)]"
               >
                 <span className="material-symbols-outlined text-[18px]">add</span>
                 Novo Fornecedor
@@ -138,7 +138,7 @@ export const Suppliers = () => {
                   <Label htmlFor="cnpj" className="font-label-md text-on-surface-variant">CNPJ (Opcional)</Label>
                   <Input id="cnpj" placeholder="00.000.000/0000-00" className="bg-surface border-2 border-outline-variant font-body-md rounded-xl h-10 focus-visible:ring-primary-container" value={cnpj} onChange={(e) => setCnpj(e.target.value)} />
                 </div>
-                <button type="submit" className="w-full flex items-center justify-center gap-2 bg-[#9F402D] text-white font-bold text-[13px] py-3 rounded-[1.25rem] hover:bg-[#8A3322] active:scale-95 transition-all shadow-[0_4px_12px_rgba(159,64,45,0.2)] mt-4">
+                <button type="submit" className="w-full flex items-center justify-center gap-2 bg-primary text-white font-bold text-[13px] py-3 rounded-[1.25rem] hover:bg-primary/90 active:scale-95 transition-all shadow-[0_4px_12px_rgba(159,64,45,0.2)] mt-4">
                   <span className="material-symbols-outlined text-[18px]">save</span>
                   Salvar Fornecedor
                 </button>

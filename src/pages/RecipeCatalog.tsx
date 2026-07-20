@@ -15,7 +15,6 @@ type Recipe = {
   prep_time_minutes: number;
   instructions: string | null;
   notes: string | null;
-  image_url: string | null;
   production_count?: number;
   recipe_ingredients: {
     quantity_used: number;
@@ -203,7 +202,7 @@ export const RecipeCatalog = () => {
       {/* Error Modal */}
       <Dialog open={isErrorModalOpen} onOpenChange={setIsErrorModalOpen}>
         <DialogContent className="max-w-md rounded-[2rem] p-6 text-center bg-surface-container-lowest border-2 border-error/20 shadow-sticker [&>button]:hidden">
-          <div className="w-16 h-16 bg-[#faece8] text-[#9F402D] rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm">
+          <div className="w-16 h-16 bg-[#faece8] text-primary rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm">
             <span className="material-symbols-outlined text-3xl">error</span>
           </div>
           <DialogTitle className="font-display-md text-2xl text-[#3e1d15] mb-2">Estoque Insuficiente!</DialogTitle>
@@ -220,7 +219,7 @@ export const RecipeCatalog = () => {
           </div>
           <button 
             onClick={() => setIsErrorModalOpen(false)}
-            className="w-full bg-[#9F402D] text-white font-bold py-3 rounded-xl hover:bg-[#8A3322] active:scale-95 transition-all shadow-sm"
+            className="w-full bg-primary text-white font-bold py-3 rounded-xl hover:bg-primary/90 active:scale-95 transition-all shadow-sm"
           >
             Entendi
           </button>
@@ -258,7 +257,7 @@ export const RecipeCatalog = () => {
             </button>
             <button 
               onClick={() => executeFinish(true)}
-              className="flex-1 bg-[#9F402D] text-white font-bold py-3 rounded-xl hover:bg-[#8A3322] active:scale-95 transition-all shadow-sm flex items-center justify-center gap-2"
+              className="flex-1 bg-primary text-white font-bold py-3 rounded-xl hover:bg-primary/90 active:scale-95 transition-all shadow-sm flex items-center justify-center gap-2"
               disabled={isFinishing}
             >
               {isFinishing ? 'Salvando...' : 'Finalizar Receita'}
@@ -288,27 +287,8 @@ export const RecipeCatalog = () => {
 
         <div className="flex flex-col md:flex-row gap-10 lg:gap-16 w-full items-start relative">
           
-          {/* Left side: Image */}
-          <div className="w-full md:w-[38%] max-w-sm relative">
-             <div className="aspect-[4/5] rounded-[2rem] overflow-hidden shadow-float relative bg-surface-container">
-               {selectedRecipe.image_url ? (
-                 <img src={selectedRecipe.image_url} alt={selectedRecipe.name} className="w-full h-full object-cover" />
-               ) : (
-                 <div className="w-full h-full bg-[#fdf3f0] flex flex-col items-center justify-center">
-                   <span className="material-symbols-outlined text-6xl text-[#e2725b]/20 mb-3">cake</span>
-                   <span className="font-display-sm text-sm text-[#e2725b]/40">Sem foto</span>
-                 </div>
-               )}
-               {/* Tag overlay */}
-               <div className="absolute top-4 right-4 bg-[#806c00] text-white font-label-sm text-[10px] px-3 py-1.5 rounded-full flex items-center gap-1 shadow-sm">
-                 <span className="material-symbols-outlined text-[12px]">star</span>
-                 Destaque
-               </div>
-             </div>
-          </div>
-
-          {/* Right side: Details */}
-          <div className="w-full md:w-[62%] flex flex-col pt-2 md:pt-4">
+          {/* Details Content */}
+          <div className="w-full flex flex-col pt-2 md:pt-4">
           <div className="flex gap-2 mb-4 items-center justify-between">
             <span className="bg-[#f2e6e3] text-[#7a5642] font-label-sm text-[10px] px-3 py-1 rounded-full uppercase tracking-wider">Ficha Técnica</span>
             
@@ -464,7 +444,7 @@ export const RecipeCatalog = () => {
                   <button 
                     onClick={handleConfirmFinish}
                     disabled={isFinishing}
-                    className="px-6 py-3 bg-[#9F402D] text-white font-bold text-[13px] rounded-full hover:bg-[#8A3322] active:scale-95 transition-all flex items-center gap-2"
+                    className="px-6 py-3 bg-primary text-white font-bold text-[13px] rounded-full hover:bg-primary/90 active:scale-95 transition-all flex items-center gap-2"
                   >
                     {isFinishing ? 'Salvando...' : 'Confirmar Baixa'}
                   </button>
@@ -506,7 +486,7 @@ export const RecipeCatalog = () => {
           </p>
         </div>
         <Link to="/fichas-tecnicas/nova" className="shrink-0">
-          <button className="flex items-center justify-center gap-2 bg-[#9F402D] text-white font-bold text-[13px] px-4 py-2.5 rounded-[1.25rem] hover:bg-[#8A3322] active:scale-95 transition-all shadow-[0_4px_12px_rgba(159,64,45,0.2)] w-full md:w-auto">
+          <button className="flex items-center justify-center gap-2 bg-primary text-white font-bold text-[13px] px-4 py-2.5 rounded-[1.25rem] hover:bg-primary/90 active:scale-95 transition-all shadow-[0_4px_12px_rgba(159,64,45,0.2)] w-full md:w-auto">
             <span className="material-symbols-outlined text-[18px]">add</span>
             Nova Ficha Técnica
           </button>
@@ -568,24 +548,17 @@ export const RecipeCatalog = () => {
               onClick={() => setSelectedRecipe(recipe)}
               className="group cursor-pointer bg-white p-5 rounded-[2rem] shadow-[0_4px_20px_rgba(159,64,45,0.05)] hover:shadow-[0_8px_30px_rgba(159,64,45,0.1)] hover:-translate-y-1 transition-all flex flex-col items-center"
             >
-              <div className="w-full aspect-[4/5] bg-[#FFF4F2] rounded-[1.5rem] flex items-center justify-center relative mb-5 group-hover:bg-[#FDECE9] transition-colors border border-[#FDF0EC]">
-                {recipe.image_url ? (
-                  <img src={recipe.image_url} alt={recipe.name} className="w-full h-full object-cover rounded-[1.5rem]" />
-                ) : (
-                  <span className="material-symbols-outlined text-[64px] text-[#E3755C]/40" style={{ fontVariationSettings: "'FILL' 1" }}>cake</span>
-                )}
-                
-                {/* Time Pill */}
-                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-white/90 backdrop-blur-sm text-[#DF7159] px-3 py-1 rounded-full text-[12px] font-bold flex items-center gap-1 shadow-sm whitespace-nowrap">
+              <h3 className="font-display-md text-[20px] text-[#7A3326] text-center leading-tight mb-2 group-hover:text-[#DF7159] transition-colors pt-2">{recipe.name}</h3>
+              <div className="flex items-center justify-center gap-2 text-[13px] text-[#B08D87] mb-5">
+                <span>{recipe.recipe_ingredients.length} ingredientes</span>
+                <span className="w-1 h-1 rounded-full bg-[#D9C4C0]"></span>
+                <span className="flex items-center gap-1">
                   <span className="material-symbols-outlined text-[14px]">timer</span>
                   {recipe.prep_time_minutes >= 60 
                     ? `${Math.floor(recipe.prep_time_minutes / 60)}h ${recipe.prep_time_minutes % 60 > 0 ? `${recipe.prep_time_minutes % 60}m` : ''}`
                     : `${recipe.prep_time_minutes}m`}
-                </div>
+                </span>
               </div>
-              
-              <h3 className="font-display-md text-[20px] text-[#7A3326] text-center leading-tight mb-1 group-hover:text-[#DF7159] transition-colors">{recipe.name}</h3>
-              <p className="text-[13px] text-[#B08D87] mb-4 text-center">{recipe.recipe_ingredients.length} ingredientes</p>
               
               <div className="flex items-center justify-center w-full mt-auto">
                 <div className="flex items-center justify-center gap-1.5 text-[#DF7159] bg-[#FFF4F2] border border-[#DF7159]/20 text-[12px] px-4 py-1.5 rounded-full font-medium w-full">

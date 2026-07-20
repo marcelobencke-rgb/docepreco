@@ -19,77 +19,77 @@ export default {
     extend: {
       colors: {
         "on-primary-fixed": "#3e0500",
-        "surface-bright": "#fff8f6",
+        "surface-bright": "#faf0ed",
         "on-secondary": "#ffffff",
         "on-primary-fixed-variant": "#802918",
-        "primary-container": "#e2725b",
-        "primary": "#9f402d",
+        "primary-container": "#f8b8c4",
+        "primary": "#e87a8c",
         "surface-container-low": "#fff0ee",
-        "surface-container-high": "#f8e4e0",
+        "surface-container-high": "#e8d5d1",
         "error-container": "#ffdad6",
         "on-tertiary-fixed-variant": "#534600",
         "on-tertiary-container": "#4b3f00",
         "on-error-container": "#93000a",
-        "background": "#fff8f6",
+        "background": "#faf0ed",
         "inverse-surface": "#392e2b",
-        "surface-container-highest": "#f2deda",
+        "surface-container-highest": "#e8d5d1",
         "on-secondary-fixed": "#2e1506",
-        "surface-tint": "#9f402d",
+        "surface-tint": "#e87a8c",
         "on-tertiary": "#ffffff",
         "secondary-fixed": "#ffdbca",
         "primary-fixed-dim": "#ffb4a5",
         "on-tertiary-fixed": "#221b00",
         "surface-dim": "#e9d6d2",
-        "surface-container": "#fdeae6",
+        "surface-container": "#f1dfdb",
         "surface-container-lowest": "#ffffff",
         "outline": "#89726d",
         "on-secondary-fixed-variant": "#603f2d",
         "primary-fixed": "#ffdad3",
-        "on-primary-container": "#5a0d02",
+        "on-primary-container": "#4a0b16",
         "on-primary": "#ffffff",
-        "on-surface": "#231917",
+        "on-surface": "#4a2b23",
         "tertiary-fixed": "#fbe278",
         "tertiary-container": "#c1ab47",
         "inverse-primary": "#ffb4a5",
-        "on-surface-variant": "#56423e",
+        "on-surface-variant": "#8c6b65",
         "tertiary": "#6e5d00",
         "tertiary-fixed-dim": "#dec65f",
         "inverse-on-surface": "#ffede9",
-        "secondary": "#7a5642",
-        "surface": "#fff8f6",
-        "on-background": "#231917",
-        "secondary-container": "#fecdb4",
-        "on-secondary-container": "#795541",
+        "secondary": "#4a2b23",
+        "surface": "#faf0ed",
+        "on-background": "#4a2b23",
+        "secondary-container": "#d2b7b0",
+        "on-secondary-container": "#2c140d",
         "secondary-fixed-dim": "#ecbda4",
         "on-error": "#ffffff",
-        "outline-variant": "#ddc0ba",
-        "surface-variant": "#f2deda",
+        "outline-variant": "#d2b7b0",
+        "surface-variant": "#e8d5d1",
         "error": "#ba1a1a",
         
         // Aliases for shadcn components to not break entirely out of the box
-        border: "#ddc0ba", // outline-variant
-        input: "#ddc0ba",
-        ring: "#9f402d", // primary
-        foreground: "#231917", // on-background
+        border: "#d2b7b0", // outline-variant
+        input: "#d2b7b0",
+        ring: "#e87a8c", // primary
+        foreground: "#4a2b23", // on-background
         destructive: {
           DEFAULT: "#ba1a1a", // error
           foreground: "#ffffff", // on-error
         },
         muted: {
-          DEFAULT: "#f8e4e0", // surface-container-high
-          foreground: "#56423e", // on-surface-variant
+          DEFAULT: "#e8d5d1", // surface-container-high
+          foreground: "#8c6b65", // on-surface-variant
         },
         accent: {
           DEFAULT: "#fff0ee", // surface-container-low
-          foreground: "#231917", // on-surface
+          foreground: "#4a2b23", // on-surface
         },
         popover: {
           DEFAULT: "#ffffff", // surface-container-lowest
-          foreground: "#231917", // on-surface
+          foreground: "#4a2b23", // on-surface
         },
         card: {
           DEFAULT: "#ffffff", // surface-container-lowest
-          foreground: "#231917", // on-surface
+          foreground: "#4a2b23", // on-surface
         },
       },
       borderRadius: {
@@ -137,8 +137,8 @@ export default {
         "caption": ["10px", { "lineHeight": "14px", "fontWeight": "600" }],
       },
       boxShadow: {
-        'soft': '0 4px 12px rgba(159, 64, 45, 0.15)',
-        'float': '0 8px 24px rgba(159, 64, 45, 0.2)'
+        'soft': '0 4px 12px rgba(232, 122, 140, 0.15)',
+        'float': '0 8px 24px rgba(232, 122, 140, 0.2)'
       }
     },
   },

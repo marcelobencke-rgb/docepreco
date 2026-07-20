@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { Input } from '@/components/ui/input';
@@ -69,6 +69,11 @@ export const RecipeForm = () => {
   const isEditing = Boolean(id && id !== 'nova');
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  
+  const isReceita = location.pathname.includes('/receitas');
+  const returnPath = isReceita ? '/receitas' : '/fichas-tecnicas';
+  const entityName = isReceita ? 'Receita' : 'Ficha Técnica';
 
   const [loading, setLoading] = useState(isEditing);
   const [saving, setSaving] = useState(false);
@@ -81,9 +86,6 @@ export const RecipeForm = () => {
   const [prepTime, setPrepTime] = useState('');
   const [instructions, setInstructions] = useState<string[]>(['']);
   const [notes, setNotes] = useState('');
-  const [imageUrl, setImageUrl] = useState('');
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState('');
   const [recipeIngredients, setRecipeIngredients] = useState<RecipeIngredient[]>([]);
 
   // UI State
@@ -135,8 +137,6 @@ export const RecipeForm = () => {
           setPrepTime(recipeData.prep_time_minutes.toString());
           setInstructions(recipeData.instructions ? recipeData.instructions.split('\n\n') : ['']);
           setNotes(recipeData.notes || '');
-          setImageUrl(recipeData.image_url || '');
-          setImagePreview(recipeData.image_url || '');
         }
 
         // Load recipe ingredients
@@ -172,14 +172,6 @@ export const RecipeForm = () => {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
-
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      setImageFile(file);
-      setImagePreview(URL.createObjectURL(file));
-    }
-  };
 
   const handleAddIngredient = () => {
     setRecipeIngredients([
@@ -258,24 +250,6 @@ export const RecipeForm = () => {
 
     setSaving(true);
     let currentRecipeId = id;
-    let finalImageUrl = imageUrl;
-
-    if (imageFile) {
-      const fileExt = imageFile.name.split('.').pop();
-      const fileName = `${Math.random()}.${fileExt}`;
-      const filePath = `${user.id}/${fileName}`;
-      
-      const { error: uploadError } = await supabase.storage
-        .from('recipe-images')
-        .upload(filePath, imageFile);
-        
-      if (!uploadError) {
-        const { data: publicUrlData } = supabase.storage
-          .from('recipe-images')
-          .getPublicUrl(filePath);
-        finalImageUrl = publicUrlData.publicUrl;
-      }
-    }
 
     const recipeData = {
       user_id: user.id,
@@ -285,7 +259,6 @@ export const RecipeForm = () => {
       prep_time_minutes: parseInt(prepTime, 10),
       instructions: instructions.map(s => s.trim()).filter(Boolean).join('\n\n'),
       notes,
-      image_url: finalImageUrl,
       updated_at: new Date().toISOString(),
     };
 
@@ -324,7 +297,7 @@ export const RecipeForm = () => {
     }
 
     setSaving(false);
-    navigate('/fichas-tecnicas');
+    navigate(returnPath);
   };
 
   if (loading) return <div className="p-xl text-center text-on-surface-variant font-body-md">Carregando ficha...</div>;
@@ -334,12 +307,12 @@ export const RecipeForm = () => {
       {/* Header */}
       <header className="flex justify-between items-center mb-6">
         <div className="flex items-center gap-4">
-          <button onClick={() => navigate('/receitas')} className="w-10 h-10 rounded-full bg-[#FDF0EC] flex items-center justify-center text-primary hover:bg-[#F8E4E0] transition-all">
+          <button onClick={() => navigate(returnPath)} className="w-10 h-10 rounded-full bg-[#FDF0EC] flex items-center justify-center text-primary hover:bg-[#F8E4E0] transition-all">
             <span className="material-symbols-outlined text-[20px]">arrow_back</span>
           </button>
           <div>
             <h2 className="font-display-lg text-[22px] text-primary mb-0.5 tracking-tight">
-              {isEditing ? 'Editar Ficha Técnica' : 'Nova Ficha Técnica'}
+              {isEditing ? `Editar ${entityName}` : `Nova ${entityName}`}
             </h2>
             <p className="font-label-md text-[12px] text-[#87655F]">
               Defina sua receita, ingredientes e acompanhe os custos reais.
@@ -353,28 +326,6 @@ export const RecipeForm = () => {
           
           {/* Left Column: Details */}
           <div className="lg:col-span-4 flex flex-col gap-8">
-            {/* Image Upload Card */}
-            <div className="bg-surface-container-lowest rounded-3xl shadow-sticker border-2 border-surface-container overflow-hidden group relative">
-              <div className="aspect-square bg-surface-container-low flex flex-col items-center justify-center relative overflow-hidden">
-                {imagePreview ? (
-                  <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
-                ) : (
-                  <div className="flex flex-col items-center justify-center text-on-surface-variant opacity-50 p-6 text-center">
-                    <span className="material-symbols-outlined text-[32px] mb-2">add_photo_alternate</span>
-                    <p className="font-label-md">Nenhuma foto adicionada</p>
-                  </div>
-                )}
-                
-                <label className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
-                  <span className="bg-surface/90 text-on-surface px-4 py-2 rounded-full font-label-md shadow-sm flex items-center gap-2">
-                    <span className="material-symbols-outlined text-[16px]">upload</span>
-                    {imagePreview ? 'Trocar Foto' : 'Fazer Upload'}
-                  </span>
-                  <input type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
-                </label>
-              </div>
-            </div>
-
             <div className="bg-surface-container-lowest p-lg rounded-3xl shadow-sticker border-2 border-surface-container space-y-md">
               <h3 className="font-headline-sm text-on-surface mb-sm flex items-center gap-sm">
                 <span className="material-symbols-outlined text-primary text-[22px]">description</span>
@@ -639,7 +590,7 @@ export const RecipeForm = () => {
                           <span className="material-symbols-outlined text-[14px]">help</span>
                         </div>
                         <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-[240px] bg-[#f4ecea] text-on-surface p-4 rounded-2xl shadow-[0_8px_30px_rgba(159,64,45,0.15)] opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-30 text-sm border border-[#e8d5d1] pointer-events-none">
-                          <p className="font-bold mb-3 text-[#9F402D]">Atalhos de formatação:</p>
+                          <p className="font-bold mb-3 text-primary">Atalhos de formatação:</p>
                           <ul className="space-y-2.5">
                             <li className="flex items-center gap-1.5 text-on-surface-variant"><kbd className="bg-white px-2 py-1 rounded-md border border-[#e8d5d1] shadow-sm text-[11px] font-bold text-[#4a322b]">Ctrl</kbd> + <kbd className="bg-white px-2 py-1 rounded-md border border-[#e8d5d1] shadow-sm text-[11px] font-bold text-[#4a322b]">B</kbd> : Negrito</li>
                             <li className="flex items-center gap-1.5 text-on-surface-variant"><kbd className="bg-white px-2 py-1 rounded-md border border-[#e8d5d1] shadow-sm text-[11px] font-bold text-[#4a322b]">Ctrl</kbd> + <kbd className="bg-white px-2 py-1 rounded-md border border-[#e8d5d1] shadow-sm text-[11px] font-bold text-[#4a322b]">I</kbd> : Itálico</li>

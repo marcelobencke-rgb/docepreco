@@ -8,23 +8,23 @@
 @layer base {
   body {
     @apply text-foreground font-sans antialiased selection:bg-primary-container selection:text-on-primary-container;
-    background-color: #fdfbf7;
+    background-color: #faf0ed;
     background-image: 
-      radial-gradient(at 0% 0%, #fff5f0 0px, transparent 50%),
-      radial-gradient(at 100% 100%, #f9e3d9 0px, transparent 50%),
-      radial-gradient(at 100% 0%, #fef3ef 0px, transparent 50%),
-      radial-gradient(at 0% 100%, #fff8f5 0px, transparent 50%);
+      radial-gradient(at 0% 0%, #fceced 0px, transparent 50%),
+      radial-gradient(at 100% 100%, #f4d8dc 0px, transparent 50%),
+      radial-gradient(at 100% 0%, #fbe7eb 0px, transparent 50%),
+      radial-gradient(at 0% 100%, #fdf1f2 0px, transparent 50%);
     background-attachment: fixed;
   }
 }
 
 @layer utilities {
   .shadow-soft {
-    box-shadow: 0 4px 12px rgba(159, 64, 45, 0.15); /* Tinted with primary #9f402d */
+    box-shadow: 0 4px 12px rgba(232, 122, 140, 0.15); /* Tinted with primary #e87a8c */
   }
 
   .shadow-sticker {
-    box-shadow: 0 8px 16px rgba(159, 64, 45, 0.15);
+    box-shadow: 0 8px 16px rgba(232, 122, 140, 0.15);
   }
 
   .border-soft {
