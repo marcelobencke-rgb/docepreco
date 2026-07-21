@@ -54,7 +54,7 @@ export const Pricing = () => {
           id, name, yield, prep_time_minutes,
           recipe_ingredients(
             quantity_used,
-            ingredients(base_unit_cost)
+            ingredients(purchase_price, purchase_quantity, purchase_unit)
           )
         `)
         .eq('user_id', user.id)
@@ -121,7 +121,14 @@ export const Pricing = () => {
 
     // 1. Ingredients Cost
     const totalIngredientsCost = selectedRecipe.recipe_ingredients.reduce((total: number, ri: any) => {
-      return total + (ri.quantity_used * ri.ingredients.base_unit_cost);
+      const { purchase_price, purchase_quantity, purchase_unit } = ri.ingredients || {};
+      let unitCost = 0;
+      if (purchase_price && purchase_quantity) {
+        if (purchase_unit === 'kg' || purchase_unit === 'litro') unitCost = purchase_price / (purchase_quantity * 1000);
+        else if (purchase_unit === 'duzia') unitCost = purchase_price / (purchase_quantity * 12);
+        else unitCost = purchase_price / purchase_quantity;
+      }
+      return total + (ri.quantity_used * unitCost);
     }, 0);
     const ingredientCostPerUnit = totalIngredientsCost / selectedRecipe.yield;
 

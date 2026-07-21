@@ -8,12 +8,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 
 
 export type Ingredient = {
-  id: string;
+  id?: string;
   name: string;
   purchase_unit: string;
   purchase_quantity: number;
   purchase_price: number;
-  base_unit_cost: number;
   current_stock: number;
   min_stock_limit: number;
   category: string;
@@ -91,7 +90,6 @@ export const IngredientDialog = ({ open, onOpenChange, ingredientToEdit, onSave 
         ...ingredientData,
         purchase_quantity: 1,
         purchase_price: 0,
-        base_unit_cost: 0,
         supplier_id: null,
       };
     }

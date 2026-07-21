@@ -4,15 +4,19 @@ import { useAuth } from '@/contexts/AuthContext';
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from "@/components/ui/label";
-import { formatCurrencyInput, parseCurrencyInput } from "@/lib/utils";
+import { formatCurrencyInput } from "@/lib/utils";
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Toast } from '@/components/ui/toast';
 
 type ShoppingList = {
   id: string;
   name: string;
   status: 'pending' | 'completed';
   created_at: string;
+  completed_at?: string;
+  supplier_id?: string;
+  suppliers?: { name: string } | null;
 };
 
 type ShoppingListItem = {
@@ -54,6 +58,8 @@ export const Shopping = () => {
   
   // Confirm Finish Dialog
   const [isConfirmFinishOpen, setIsConfirmFinishOpen] = useState(false);
+  const [isSuccessToastOpen, setIsSuccessToastOpen] = useState(false);
+  const [successToastMessage, setSuccessToastMessage] = useState('');
   
   const [availableIngredients, setAvailableIngredients] = useState<Ingredient[]>([]);
   const [suppliers, setSuppliers] = useState<{id: string, name: string}[]>([]);
@@ -77,7 +83,7 @@ export const Shopping = () => {
     if (!user) return;
     const { data } = await supabase
       .from('shopping_lists')
-      .select('*')
+      .select('*, suppliers(name)')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false });
     if (data) setLists(data as any);
@@ -282,14 +288,19 @@ export const Shopping = () => {
     let finalSupplierId = globalSupplierId;
 
     if ((!finalSupplierId || finalSupplierId === 'none') && supplierSearch.trim()) {
-      const { data: newSupplier } = await supabase
-        .from('suppliers')
-        .insert({ user_id: user.id, name: supplierSearch.trim() })
-        .select()
-        .single();
-      if (newSupplier) {
-        finalSupplierId = newSupplier.id;
-        setSuppliers([...suppliers, newSupplier]);
+      const existingSupplier = suppliers.find(s => s.name.toLowerCase() === supplierSearch.trim().toLowerCase());
+      if (existingSupplier) {
+        finalSupplierId = existingSupplier.id;
+      } else {
+        const { data: newSupplier } = await supabase
+          .from('suppliers')
+          .insert({ user_id: user.id, name: supplierSearch.trim() })
+          .select()
+          .single();
+        if (newSupplier) {
+          finalSupplierId = newSupplier.id;
+          setSuppliers([...suppliers, newSupplier]);
+        }
       }
     } else if (!supplierSearch.trim()) {
       finalSupplierId = 'none';
@@ -298,16 +309,19 @@ export const Shopping = () => {
     for (const item of listItems) {
       if (!item.ingredients) continue;
       
-      const isBaseUnit = item.ingredients.purchase_unit === 'g' || item.ingredients.purchase_unit === 'ml' || item.ingredients.purchase_unit === 'un';
-      const actualQtyInBase = isBaseUnit ? Number(item.quantity) : Number(item.quantity) * 1000;
+      let actualQtyInBase = Number(item.quantity);
+      if (item.ingredients.purchase_unit === 'kg' || item.ingredients.purchase_unit === 'litro') {
+        actualQtyInBase *= 1000;
+      } else if (item.ingredients.purchase_unit === 'duzia') {
+        actualQtyInBase *= 12;
+      }
       const newStock = Number(item.ingredients.current_stock) + actualQtyInBase;
       const newPurchasePrice = Number(item.price) > 0 ? Number(item.price) : Number(item.ingredients.purchase_price);
-      const newBaseCost = calculateBaseCost(actualQtyInBase, newPurchasePrice, item.ingredients.purchase_unit);
       
       await supabase.from('ingredients').update({
         current_stock: newStock,
         purchase_price: newPurchasePrice,
-        base_unit_cost: newBaseCost
+        purchase_quantity: Number(item.quantity)
       }).eq('id', item.ingredient_id);
       
       await supabase.from('stock_movements').insert({
@@ -324,15 +338,24 @@ export const Shopping = () => {
     
     await supabase.from('shopping_lists').update({
       status: 'completed',
-      completed_at: new Date().toISOString()
+      completed_at: new Date().toISOString(),
+      supplier_id: finalSupplierId === 'none' ? null : finalSupplierId
     }).eq('id', selectedList.id);
     
-    const updatedList = { ...selectedList, status: 'completed' as const };
-    setSelectedList(updatedList);
+    const updatedList = { 
+      ...selectedList, 
+      status: 'completed' as const,
+      completed_at: new Date().toISOString(),
+      supplier_id: finalSupplierId === 'none' ? null : finalSupplierId,
+      suppliers: finalSupplierId === 'none' ? null : { name: supplierSearch.trim() || suppliers.find(s => s.id === finalSupplierId)?.name || 'Fornecedor' }
+    };
+    
     setLists(lists.map(l => l.id === updatedList.id ? updatedList : l));
+    setSelectedList(null);
     
     setIsFinishing(false);
-    alert('Compra finalizada com sucesso! Estoque e preços atualizados.');
+    setSuccessToastMessage('Compra finalizada com sucesso! Estoque e preços atualizados.');
+    setIsSuccessToastOpen(true);
   };
 
   if (loading) return <div className="p-xl text-center text-on-surface-variant">Carregando listas...</div>;
@@ -435,7 +458,15 @@ export const Shopping = () => {
                     </span>
                   </div>
                   <h3 className="font-display-sm text-lg text-[#3e1d15] mb-1">{list.name}</h3>
-                  <p className="text-[12px] text-on-surface-variant">Criada em: {new Date(list.created_at).toLocaleDateString('pt-BR')}</p>
+                  <div className="flex flex-col gap-0.5">
+                    <p className="text-[12px] text-on-surface-variant">Criada em: {new Date(list.created_at).toLocaleDateString('pt-BR')}</p>
+                    {list.status === 'completed' && list.completed_at && (
+                      <p className="text-[12px] text-[#2e6d3d] font-medium">Concluída em: {new Date(list.completed_at).toLocaleDateString('pt-BR')}</p>
+                    )}
+                    {list.status === 'completed' && list.suppliers?.name && (
+                      <p className="text-[12px] text-on-surface-variant">Fornecedor: {list.suppliers.name}</p>
+                    )}
+                  </div>
                 </div>
               ))
             )}
@@ -754,6 +785,13 @@ export const Shopping = () => {
           </div>
         </DialogContent>
       </Dialog>
+      
+      <Toast 
+        open={isSuccessToastOpen} 
+        onOpenChange={setIsSuccessToastOpen} 
+        title="Sucesso!" 
+        description={successToastMessage} 
+      />
     </div>
   );
 };

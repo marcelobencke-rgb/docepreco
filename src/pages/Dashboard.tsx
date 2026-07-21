@@ -9,6 +9,7 @@ export const Dashboard = () => {
   const [fabOpen, setFabOpen] = useState(false);
   const [stats, setStats] = useState({ ingredients: 0, recipes: 0, pricings: 0, lowStock: 0 });
   const [recentRecipes, setRecentRecipes] = useState<any[]>([]);
+  const [profileName, setProfileName] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -57,11 +58,25 @@ export const Dashboard = () => {
 
       if (recent) setRecentRecipes(recent);
       
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('name')
+        .eq('id', user.id)
+        .single();
+        
+      if (profile?.name) {
+        setProfileName(profile.name);
+      }
+      
       setLoading(false);
     };
 
     fetchDashboardData();
   }, [user]);
+  
+  const rawName = profileName || user?.user_metadata?.name || user?.user_metadata?.first_name || (user?.email ? user.email.split('@')[0] : 'Confeiteira');
+  const userName = rawName.charAt(0).toUpperCase() + rawName.slice(1);
+  const userInitials = userName.substring(0, 2).toUpperCase();
 
   if (loading) return <div className="p-xl text-center text-on-surface-variant font-body-md">Carregando painel...</div>;
 
@@ -70,16 +85,16 @@ export const Dashboard = () => {
       {/* Greeting Section */}
       <header className="flex justify-between items-center mb-6">
         <div>
-          <h2 className="font-display-lg text-[22px] text-primary mb-0.5 tracking-tight">Olá, Confeiteira! ✨</h2>
+          <h2 className="font-display-lg text-[22px] text-primary mb-0.5 tracking-tight">Olá, {userName}! ✨</h2>
           <p className="font-label-md text-[12px] text-[#87655F]">Veja como está o seu ateliê hoje.</p>
         </div>
         <div className="flex items-center gap-2">
-          <button className="w-8 h-8 rounded-full bg-[#FDF0EC] flex items-center justify-center text-primary hover:bg-[#F8E4E0] transition-all">
-            <span className="material-symbols-outlined text-[18px]">notifications</span>
-          </button>
-          <div className="w-8 h-8 rounded-full overflow-hidden bg-[#7A3326] text-white flex items-center justify-center font-bold text-[13px]">
-            DP
-          </div>
+          <Link to="/configuracoes" className="w-8 h-8 rounded-full bg-[#FDF0EC] flex items-center justify-center text-primary hover:bg-[#F8E4E0] transition-all">
+            <span className="material-symbols-outlined text-[18px]">settings</span>
+          </Link>
+          <Link to="/perfil" className="w-8 h-8 rounded-full overflow-hidden bg-[#7A3326] text-white flex items-center justify-center font-bold text-[13px] hover:opacity-90 transition-opacity cursor-pointer">
+            {userInitials}
+          </Link>
         </div>
       </header>
 
@@ -205,7 +220,7 @@ export const Dashboard = () => {
       </div>
 
       {/* Floating Action Button (FAB) */}
-      <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3">
+      <div className="fixed bottom-24 md:bottom-6 right-6 z-50 flex flex-col items-end gap-3">
         {fabOpen && (
           <div className="flex flex-col gap-2 mb-2 items-end">
             <Link to="/receitas/nova" className="flex items-center gap-3 bg-white px-5 py-3 rounded-full shadow-[0_4px_12px_rgba(0,0,0,0.1)] hover:scale-105 transition-all text-on-surface">

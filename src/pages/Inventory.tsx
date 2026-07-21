@@ -16,8 +16,8 @@ type Ingredient = {
   purchase_unit: string;
   purchase_quantity: number;
   purchase_price: number;
-  base_unit_cost: number;
   current_stock: number;
+  min_stock_limit: number;
   supplier_id: string | null;
   suppliers: { name: string } | null;
   recipe_ingredients?: { quantity_used: number, recipes: { name: string } }[];
@@ -420,13 +420,6 @@ export const Inventory = () => {
                         ) : (
                           <span className="text-[12px] font-normal italic">Não controlado</span>
                         )}
-                      </span>
-                    </div>
-                    <div className="text-right border-l-2 border-dashed border-surface-container-high pl-4 md:pl-6">
-                      <p className="text-[10px] text-[#87655F] uppercase tracking-wider mb-0.5 font-medium">Custo Base</p>
-                      <span className="text-[14px] text-primary font-bold">
-                        {Number(ing.base_unit_cost).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                        <span className="text-[11px] text-[#87655F]/70 ml-1">/{getBaseUnitLabel(ing.purchase_unit)}</span>
                       </span>
                     </div>
                   </div>

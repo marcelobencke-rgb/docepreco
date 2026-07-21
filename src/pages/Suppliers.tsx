@@ -108,14 +108,12 @@ export const Suppliers = () => {
         </div>
         <div className="flex items-center gap-2">
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <button 
-                onClick={() => handleOpenDialog()}
-                className="flex items-center justify-center gap-2 bg-primary text-white font-bold text-[13px] px-4 py-2.5 rounded-[1.25rem] hover:bg-primary/90 active:scale-95 transition-all shadow-[0_4px_12px_rgba(159,64,45,0.2)]"
-              >
-                <span className="material-symbols-outlined text-[18px]">add</span>
-                Novo Fornecedor
-              </button>
+            <DialogTrigger 
+              onClick={() => handleOpenDialog()}
+              className="flex items-center justify-center gap-2 bg-primary text-white font-bold text-[13px] px-4 py-2.5 rounded-[1.25rem] hover:bg-primary/90 active:scale-95 transition-all shadow-[0_4px_12px_rgba(159,64,45,0.2)]"
+            >
+              <span className="material-symbols-outlined text-[18px]">add</span>
+              Novo Fornecedor
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px] bg-surface-container-lowest border-2 border-primary-container rounded-3xl shadow-[0_10px_25px_rgba(159,64,45,0.2)]">
               <DialogHeader>

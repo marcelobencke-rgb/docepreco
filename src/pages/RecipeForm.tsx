@@ -17,7 +17,8 @@ const getBaseUnitLabel = (unit: string) => {
 type Ingredient = {
   id: string;
   name: string;
-  base_unit_cost: number;
+  purchase_price: number;
+  purchase_quantity: number;
   purchase_unit: string;
 };
 
@@ -26,8 +27,15 @@ type RecipeIngredient = {
   ingredient_id: string;
   quantity_used: number;
   ingredient_name?: string; // for UI
-  base_unit_cost?: number; // for UI calculation
+  unit_cost?: number; // for UI calculation
   purchase_unit?: string; // for UI
+};
+
+const getUnitCost = (price: number, qty: number, unit: string) => {
+  if (!price || !qty) return 0;
+  if (unit === 'kg' || unit === 'litro') return price / (qty * 1000);
+  if (unit === 'duzia') return price / (qty * 12);
+  return price / qty;
 };
 
 const StepEditor = ({ 
@@ -105,7 +113,7 @@ export const RecipeForm = () => {
       // Load available ingredients
       const { data: ingData } = await supabase
         .from('ingredients')
-        .select('id, name, base_unit_cost, purchase_unit')
+        .select('id, name, purchase_price, purchase_quantity, purchase_unit')
         .eq('user_id', user.id)
         .is('deleted_at', null)
         .order('name');
@@ -142,7 +150,7 @@ export const RecipeForm = () => {
         // Load recipe ingredients
         const { data: riData } = await supabase
           .from('recipe_ingredients')
-          .select('id, ingredient_id, quantity_used, ingredients(name, base_unit_cost, purchase_unit)')
+          .select('id, ingredient_id, quantity_used, ingredients(name, purchase_price, purchase_quantity, purchase_unit)')
           .eq('recipe_id', id);
           
         if (riData) {
@@ -150,9 +158,9 @@ export const RecipeForm = () => {
             id: ri.id,
             ingredient_id: ri.ingredient_id,
             quantity_used: ri.quantity_used,
-            ingredient_name: ri.ingredients.name,
-            base_unit_cost: ri.ingredients.base_unit_cost,
-            purchase_unit: ri.ingredients.purchase_unit,
+            ingredient_name: ri.ingredients?.name,
+            unit_cost: getUnitCost(ri.ingredients?.purchase_price, ri.ingredients?.purchase_quantity, ri.ingredients?.purchase_unit),
+            purchase_unit: ri.ingredients?.purchase_unit,
           }));
           setRecipeIngredients(formatted);
         }
@@ -192,7 +200,7 @@ export const RecipeForm = () => {
         ...updated[index], 
         ingredient_id: value, 
         ingredient_name: selected?.name,
-        base_unit_cost: Number(selected?.base_unit_cost) || 0,
+        unit_cost: selected ? getUnitCost(selected.purchase_price, selected.purchase_quantity, selected.purchase_unit) : 0,
         purchase_unit: selected?.purchase_unit
       };
     } else {
@@ -202,7 +210,7 @@ export const RecipeForm = () => {
   };
 
   const totalCost = recipeIngredients.reduce((total, ri) => {
-    return total + ((ri.base_unit_cost || 0) * ri.quantity_used);
+    return total + ((ri.unit_cost || 0) * ri.quantity_used);
   }, 0);
 
   const handleSaveQuickAdd = (savedIngredient: BaseIngredient) => {
@@ -210,7 +218,8 @@ export const RecipeForm = () => {
     const mapped: Ingredient = {
       id: savedIngredient.id,
       name: savedIngredient.name,
-      base_unit_cost: Number(savedIngredient.base_unit_cost) || 0,
+      purchase_price: savedIngredient.purchase_price,
+      purchase_quantity: savedIngredient.purchase_quantity,
       purchase_unit: savedIngredient.purchase_unit
     };
     
@@ -231,7 +240,7 @@ export const RecipeForm = () => {
         ...updated[quickAddIndex],
         ingredient_id: mapped.id,
         ingredient_name: mapped.name,
-        base_unit_cost: mapped.base_unit_cost,
+        unit_cost: getUnitCost(mapped.purchase_price, mapped.purchase_quantity, mapped.purchase_unit),
         purchase_unit: mapped.purchase_unit
       };
       setRecipeIngredients(updated);
@@ -507,7 +516,7 @@ export const RecipeForm = () => {
                             <SelectContent className="rounded-xl border-2 border-outline-variant">
                               {availableIngredients.map(ing => (
                                 <SelectItem key={ing.id} value={ing.id}>
-                                  {ing.name} ({Number(ing.base_unit_cost).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 4 })} por {ing.purchase_unit === 'kg' || ing.purchase_unit === 'g' ? 'g' : ing.purchase_unit === 'litro' || ing.purchase_unit === 'ml' ? 'ml' : 'un'})
+                                  {ing.name} ({getUnitCost(ing.purchase_price, ing.purchase_quantity, ing.purchase_unit).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 4 })} por {ing.purchase_unit === 'kg' || ing.purchase_unit === 'g' ? 'g' : ing.purchase_unit === 'litro' || ing.purchase_unit === 'ml' ? 'ml' : 'un'})
                                 </SelectItem>
                               ))}
                             </SelectContent>
@@ -548,11 +557,11 @@ export const RecipeForm = () => {
                       
                       <div className="w-full sm:w-auto flex justify-between sm:justify-end items-center sm:block mt-2 sm:mt-0 pt-4 sm:pt-0 border-t-2 sm:border-0 border-surface-container border-dashed">
                         <span className="sm:hidden font-headline-sm text-primary">
-                          {ri.ingredient_id ? ((ri.base_unit_cost || 0) * ri.quantity_used).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL'}) : 'R$ 0,00'}
+                          {ri.ingredient_id ? ((ri.unit_cost || 0) * ri.quantity_used).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL'}) : 'R$ 0,00'}
                         </span>
                         <div className="flex flex-col items-end gap-1">
                           <span className="hidden sm:block font-label-md text-primary bg-primary-container/20 px-2 py-1 rounded-md mb-2">
-                            {ri.ingredient_id ? ((ri.base_unit_cost || 0) * ri.quantity_used).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL'}) : 'R$ 0,00'}
+                            {ri.ingredient_id ? ((ri.unit_cost || 0) * ri.quantity_used).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL'}) : 'R$ 0,00'}
                           </span>
                           <button 
                             type="button" 
