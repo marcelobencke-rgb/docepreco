@@ -1,80 +1,39 @@
-import { useEffect, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
+import { useIngredients } from '@/hooks/useIngredients';
+import { useRecipes } from '@/hooks/useRecipes';
+import { usePricings } from '@/hooks/usePricings';
+import { useProfile } from '@/hooks/useProfile';
 
 export const Dashboard = () => {
   const { user } = useAuth();
-  const [loading, setLoading] = useState(true);
   const [fabOpen, setFabOpen] = useState(false);
-  const [stats, setStats] = useState({ ingredients: 0, recipes: 0, pricings: 0, lowStock: 0 });
-  const [recentRecipes, setRecentRecipes] = useState<any[]>([]);
-  const [profileName, setProfileName] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchDashboardData = async () => {
-      if (!user) return;
+  const { ingredients, isLoading: ingredientsLoading } = useIngredients();
+  const { recipes, isLoading: recipesLoading } = useRecipes();
+  const { pricings, isLoading: pricingsLoading } = usePricings();
+  const { profile, isLoading: profileLoading } = useProfile();
 
-      const { count: ingCount } = await supabase
-        .from('ingredients')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', user.id)
-        .is('deleted_at', null);
+  const loading = ingredientsLoading || recipesLoading || pricingsLoading || profileLoading;
 
-      const { data: allIngredients } = await supabase
-        .from('ingredients')
-        .select('current_stock, min_stock_limit')
-        .eq('user_id', user.id)
-        .is('deleted_at', null);
-      
-      const lowStockCount = allIngredients?.filter(i => {
-        const min = Number(i.min_stock_limit);
-        return min > 0 && Number(i.current_stock) <= min;
-      }).length || 0;
+  const stats = useMemo(() => ({
+    ingredients: ingredients.length,
+    recipes: recipes.length,
+    pricings: pricings.length,
+    lowStock: ingredients.filter(i => {
+      const min = Number(i.min_stock_limit);
+      return min > 0 && Number(i.current_stock) <= min;
+    }).length,
+  }), [ingredients, recipes, pricings]);
 
-      const { count: recCount } = await supabase
-        .from('recipes')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', user.id);
+  const recentRecipes = useMemo(() => {
+    return [...recipes]
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      .slice(0, 4);
+  }, [recipes]);
 
-      const { count: pricingsCount } = await supabase
-        .from('pricings')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', user.id);
-
-      setStats({
-        ingredients: ingCount || 0,
-        recipes: recCount || 0,
-        pricings: pricingsCount || 0,
-        lowStock: lowStockCount
-      });
-
-      const { data: recent } = await supabase
-        .from('recipes')
-        .select('id, name, yield, created_at')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(4);
-
-      if (recent) setRecentRecipes(recent);
-      
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('name')
-        .eq('id', user.id)
-        .single();
-        
-      if (profile?.name) {
-        setProfileName(profile.name);
-      }
-      
-      setLoading(false);
-    };
-
-    fetchDashboardData();
-  }, [user]);
-  
-  const rawName = profileName || user?.user_metadata?.name || user?.user_metadata?.first_name || (user?.email ? user.email.split('@')[0] : 'Confeiteira');
+  const rawName = profile?.name || user?.user_metadata?.name || user?.user_metadata?.first_name || (user?.email ? user.email.split('@')[0] : 'Confeiteira');
   const userName = rawName.charAt(0).toUpperCase() + rawName.slice(1);
   const userInitials = userName.substring(0, 2).toUpperCase();
 
@@ -100,7 +59,7 @@ export const Dashboard = () => {
 
       {/* KPI Cards Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        
+
         {/* Card 1: Receitas Cadastradas */}
         <Link to="/receitas" className="block outline-none">
           <div className="bg-white p-4 lg:p-5 rounded-[1.5rem] flex items-center gap-4 hover:-translate-y-1 transition-transform shadow-[0_4px_20px_rgba(159,64,45,0.05)] cursor-pointer">
@@ -168,7 +127,7 @@ export const Dashboard = () => {
               Ver Todas
             </Link>
           </div>
-          
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {recentRecipes.length === 0 ? (
               <p className="col-span-full text-on-surface-variant font-body-md py-6 text-center">
@@ -197,7 +156,7 @@ export const Dashboard = () => {
               Ver Todas
             </Link>
           </div>
-          
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {recentRecipes.length === 0 ? (
               <p className="col-span-full text-on-surface-variant font-body-md py-6 text-center">
@@ -237,7 +196,7 @@ export const Dashboard = () => {
             </Link>
           </div>
         )}
-        <button 
+        <button
           onClick={() => setFabOpen(!fabOpen)}
           className={`w-14 h-14 rounded-full bg-primary text-white flex items-center justify-center shadow-[0_8px_24px_rgba(159,64,45,0.4)] hover:scale-105 active:scale-95 transition-all duration-300 ${fabOpen ? 'rotate-45 bg-[#8A3322]' : ''}`}
         >
@@ -247,4 +206,3 @@ export const Dashboard = () => {
     </div>
   );
 };
-

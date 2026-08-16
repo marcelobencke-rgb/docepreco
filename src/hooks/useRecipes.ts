@@ -44,6 +44,7 @@ export type Recipe = {
   instructions: string | null;
   notes: string | null;
   production_count: number;
+  created_at: string;
   recipe_ingredients: RecipeIngredientJoin[];
 };
 
