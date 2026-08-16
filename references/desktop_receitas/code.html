@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Recipe Visualization - Sweet Treats</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        @import url('https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;600;700&display=swap');
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-error-container": "#93000a",
+                        "inverse-primary": "#ffb4a5",
+                        "on-surface-variant": "#56423e",
+                        "primary-fixed": "#ffdad3",
+                        "surface-dim": "#e9d6d2",
+                        "on-tertiary": "#ffffff",
+                        "on-tertiary-fixed-variant": "#534600",
+                        "primary-fixed-dim": "#ffb4a5",
+                        "on-tertiary-container": "#4b3f00",
+                        "on-background": "#231917",
+                        "on-primary-fixed": "#3e0500",
+                        "on-secondary": "#ffffff",
+                        "surface-container-high": "#f8e4e0",
+                        "on-tertiary-fixed": "#221b00",
+                        "error": "#ba1a1a",
+                        "tertiary": "#6e5d00",
+                        "on-secondary-fixed": "#2e1506",
+                        "background": "#fff8f6",
+                        "on-surface": "#231917",
+                        "secondary": "#7a5642",
+                        "surface-container": "#fdeae6",
+                        "tertiary-container": "#c1ab47",
+                        "on-primary": "#ffffff",
+                        "inverse-on-surface": "#ffede9",
+                        "on-secondary-container": "#795541",
+                        "surface-variant": "#f2deda",
+                        "inverse-surface": "#392e2b",
+                        "tertiary-fixed-dim": "#dec65f",
+                        "secondary-container": "#fecdb4",
+                        "on-primary-container": "#5a0d02",
+                        "error-container": "#ffdad6",
+                        "outline": "#89726d",
+                        "tertiary-fixed": "#fbe278",
+                        "surface-container-highest": "#f2deda",
+                        "surface": "#fff8f6",
+                        "secondary-fixed": "#ffdbca",
+                        "on-primary-fixed-variant": "#802918",
+                        "surface-tint": "#9f402d",
+                        "surface-container-lowest": "#ffffff",
+                        "secondary-fixed-dim": "#ecbda4",
+                        "on-secondary-fixed-variant": "#603f2d",
+                        "surface-container-low": "#fff0ee",
+                        "primary-container": "#e2725b",
+                        "primary": "#9f402d",
+                        "on-error": "#ffffff",
+                        "surface-bright": "#fff8f6",
+                        "outline-variant": "#ddc0ba"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "1rem",
+                        "lg": "2rem",
+                        "xl": "3rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "gutter": "24px",
+                        "sm": "12px",
+                        "md": "24px",
+                        "base": "8px",
+                        "xs": "4px",
+                        "xl": "80px",
+                        "lg": "48px",
+                        "container-max": "1200px"
+                    },
+                    "fontFamily": {
+                        "headline-sm": ["Comfortaa"],
+                        "label-md": ["Comfortaa"],
+                        "display-lg-mobile": ["Comfortaa"],
+                        "body-md": ["Comfortaa"],
+                        "body-lg": ["Comfortaa"],
+                        "display-lg": ["Comfortaa"],
+                        "headline-md": ["Comfortaa"],
+                        "label-sm": ["Comfortaa"]
+                    },
+                    "fontSize": {
+                        "headline-sm": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "label-md": ["14px", { "lineHeight": "20px", "letterSpacing": "0.02em", "fontWeight": "600" }],
+                        "display-lg-mobile": ["36px", { "lineHeight": "44px", "letterSpacing": "-0.01em", "fontWeight": "700" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+                        "display-lg": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "headline-md": ["32px", { "lineHeight": "40px", "fontWeight": "600" }],
+                        "label-sm": ["12px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "700" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .bubbly-shadow {
+            box-shadow: 0px 8px 24px rgba(159, 64, 45, 0.15);
+        }
+        .inner-glow {
+            box-shadow: inset 0px 2px 4px rgba(255, 255, 255, 0.5);
+        }
+        .wavy-border {
+            background-image: url("data:image/svg+xml,%3Csvg width='100' height='20' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 10 Q 25 20, 50 10 T 100 10' stroke='%23ddc0ba' fill='none' stroke-width='2'/%3E%3C/svg%3E");
+            background-repeat: repeat-x;
+            background-position: bottom;
+            padding-bottom: 20px;
+        }
+        /* Custom scrollbar for playful feel */
+        ::-webkit-scrollbar {
+            width: 12px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #fff8f6;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #e2725b;
+            border-radius: 10px;
+            border: 3px solid #fff8f6;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #9f402d;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-md antialiased overflow-hidden flex">
+<!-- SideNavBar (Shared Component JSON + Design System Logic) -->
+<nav class="bg-surface-container-low dark:bg-surface-container-lowest shadow-[4px_0px_10px_rgba(159,64,45,0.15)] h-screen w-64 rounded-r-lg fixed left-0 top-0 flex flex-col p-md z-50">
+<!-- Brand Header -->
+<div class="flex items-center gap-4 mb-xl">
+<div class="w-12 h-12 rounded-full overflow-hidden bg-primary-container flex-shrink-0 inner-glow">
+<img alt="Bakery Logo" class="w-full h-full object-cover" data-alt="A highly detailed, playful 3D rendered logo of a cheerful cupcake with pastel pink frosting and colorful sprinkles, set against a warm terracotta background. The lighting is soft and bouncy, emphasizing the tactile, candy-like aesthetic of the brand." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCG_n3PE2-kzn4ckEeeYJ9wdiORjDvPQhyLW4f00_ob6QuCYItujtcK8eh91AkkYYlwVlG0rsavS_AlVUICfKttVEK75-sIoifdQfN6PqPE6z5pnZD0UoQ2b6elZKIr2T71cC3aIhAW8Qt2IKyu26qgakARhMA1yE4IwbBTx296W3mXSGieAJbX9-SGnqogwqGlFsgfZXQXRpoTx3Rfi-L18Bw4joS-BTvtBWUrfmT2-fJWsLEb_5cBCx7KseJmtkBDAfiWE_705eR2"/>
+</div>
+<div>
+<h1 class="font-headline-sm text-headline-sm text-primary dark:text-primary-fixed-dim m-0">Sweet Treats</h1>
+<p class="font-label-sm text-label-sm text-on-surface-variant m-0">Artisanal Bakery</p>
+</div>
+</div>
+<!-- Navigation Links -->
+<ul class="flex flex-col gap-sm flex-1">
+<li>
+<a class="flex items-center gap-3 px-4 py-3 rounded-full text-on-surface-variant hover:bg-surface-container-high transition-all hover:scale-105 active:scale-95 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="font-label-md text-label-md">Dashboard</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-4 py-3 rounded-full text-on-surface-variant hover:bg-surface-container-high transition-all hover:scale-105 active:scale-95 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="inventory_2">inventory_2</span>
+<span class="font-label-md text-label-md">Inventory</span>
+</a>
+</li>
+<li>
+<!-- Active State Logic Applied Here (Recipes intent) -->
+<a class="flex items-center gap-3 px-4 py-3 rounded-full bg-primary-container text-on-primary-container font-bold hover:scale-105 active:scale-95 transition-all duration-200 inner-glow" href="#">
+<span class="material-symbols-outlined" data-icon="menu_book" data-weight="fill" style="font-variation-settings: 'FILL' 1;">menu_book</span>
+<span class="font-label-md text-label-md">Recipes</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-4 py-3 rounded-full text-on-surface-variant hover:bg-surface-container-high transition-all hover:scale-105 active:scale-95 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="payments">payments</span>
+<span class="font-label-md text-label-md">Pricing</span>
+</a>
+</li>
+</ul>
+<!-- CTA Button -->
+<button class="mt-auto w-full bg-primary text-on-primary font-label-md text-label-md py-3 px-6 rounded-full bubbly-shadow inner-glow hover:scale-105 active:scale-95 transition-all duration-200 flex items-center justify-center gap-2">
+<span class="material-symbols-outlined">add</span>
+            New Order
+        </button>
+</nav>
+<!-- Main Content Area (Split Pane) -->
+<main class="ml-64 flex-1 h-screen flex relative">
+<!-- Background decorative blobs -->
+<div class="absolute inset-0 pointer-events-none overflow-hidden opacity-30 z-0">
+<div class="absolute -top-20 -left-20 w-[600px] h-[600px] bg-secondary-container rounded-full mix-blend-multiply filter blur-3xl opacity-50"></div>
+<div class="absolute top-1/2 -right-40 w-[800px] h-[800px] bg-tertiary-container rounded-full mix-blend-multiply filter blur-3xl opacity-30"></div>
+</div>
+<!-- Left Pane: Hero Image -->
+<div class="w-2/5 p-lg h-full flex flex-col justify-center z-10 relative">
+<div class="w-full aspect-[4/5] rounded-xl overflow-hidden bubbly-shadow relative group">
+<img alt="Chocolate Strawberry Cake" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" data-alt="A mouth-watering, highly detailed, professional food photography shot of a tall, multi-layered chocolate cake with vibrant strawberry filling. The cake is placed on a soft pink ceramic stand in a bright, sunlit kitchen setting. The styling is playful yet premium, with sprinkles scattered around, embodying a candy-shop aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAYLHvz9DS-73UKTNsHaN2h7mpNbtIZFyaCKHQKJJIfgZStre6KFB4IsHWY_8hNikxBYOjMZi9QHq6P-RAqh79DxLsPjgKrBUe3ETmjWXJXzD0wxmlN5SyeTHJPKIVZ8HLiYvHP8YzIakyHDY9fr6D4_7kR-jRjrmj7RkNUz0t1ogK0HQRvYyDtPibTgsg0KwHGGxlEcfzmIMq8q3j_e0mmxHWR693iwgir9nO3Qw7aGOQAqKnpxBA7uV1lg297G3kiZF3k4i2GBTYB"/>
+<!-- Floating Badge -->
+<div class="absolute top-6 right-6 bg-tertiary text-on-tertiary font-label-md text-label-md px-4 py-2 rounded-full bubbly-shadow inner-glow flex items-center gap-2 backdrop-blur-sm bg-opacity-90">
+<span class="material-symbols-outlined text-sm">star</span>
+                    Best Seller
+                </div>
+</div>
+</div>
+<!-- Right Pane: Scrollable Content -->
+<div class="w-3/5 h-full overflow-y-auto p-xl relative z-10">
+<!-- Header Section -->
+<header class="mb-lg wavy-border">
+<div class="flex items-center gap-3 mb-sm">
+<span class="bg-surface-container-high text-on-surface-variant px-3 py-1 rounded-full font-label-sm text-label-sm">Cakes</span>
+<span class="bg-surface-container-high text-on-surface-variant px-3 py-1 rounded-full font-label-sm text-label-sm">Advanced</span>
+</div>
+<h2 class="font-display-lg text-display-lg text-primary mb-md leading-tight">Strawberry Dream Layer Cake</h2>
+<!-- Quick Info Grid -->
+<div class="grid grid-cols-3 gap-md bg-surface-container p-6 rounded-xl bubbly-shadow">
+<div class="flex flex-col items-center text-center gap-2">
+<div class="w-12 h-12 rounded-full bg-secondary-container flex items-center justify-center text-on-secondary-container">
+<span class="material-symbols-outlined" data-icon="schedule">schedule</span>
+</div>
+<div>
+<p class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Prep Time</p>
+<p class="font-headline-sm text-headline-sm text-on-background">45 Min</p>
+</div>
+</div>
+<div class="flex flex-col items-center text-center gap-2">
+<div class="w-12 h-12 rounded-full bg-secondary-container flex items-center justify-center text-on-secondary-container">
+<span class="material-symbols-outlined" data-icon="groups">groups</span>
+</div>
+<div>
+<p class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Yields</p>
+<p class="font-headline-sm text-headline-sm text-on-background">12 Slices</p>
+</div>
+</div>
+<div class="flex flex-col items-center text-center gap-2">
+<div class="w-12 h-12 rounded-full bg-secondary-container flex items-center justify-center text-on-secondary-container">
+<span class="material-symbols-outlined" data-icon="kitchen">kitchen</span>
+</div>
+<div>
+<p class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Shelf Life</p>
+<p class="font-headline-sm text-headline-sm text-on-background">3 Days</p>
+</div>
+</div>
+</div>
+</header>
+<!-- Ingredients Section -->
+<section class="mb-xl">
+<h3 class="font-headline-md text-headline-md text-secondary mb-md flex items-center gap-3">
+<span class="material-symbols-outlined bg-surface-variant p-2 rounded-full text-secondary">shopping_basket</span>
+                    Ingredients
+                </h3>
+<!-- Two-column grid with custom bubbly checkboxes -->
+<div class="grid grid-cols-2 gap-x-gutter gap-y-sm">
+<!-- Item -->
+<label class="flex items-start gap-4 p-4 rounded-xl hover:bg-surface-container transition-colors cursor-pointer group">
+<div class="relative flex items-center justify-center mt-1">
+<input class="peer sr-only" type="checkbox"/>
+<div class="w-6 h-6 rounded-full border-2 border-outline-variant peer-checked:bg-primary-container peer-checked:border-primary-container transition-all duration-300 flex items-center justify-center peer-checked:scale-110">
+<span class="material-symbols-outlined text-on-primary-container opacity-0 peer-checked:opacity-100 text-[18px] transition-opacity duration-300">check</span>
+</div>
+</div>
+<div>
+<p class="font-label-md text-label-md text-on-background group-hover:text-primary transition-colors">All-purpose Flour</p>
+<p class="font-body-md text-body-md text-on-surface-variant">400g (sifted)</p>
+</div>
+</label>
+<!-- Item -->
+<label class="flex items-start gap-4 p-4 rounded-xl hover:bg-surface-container transition-colors cursor-pointer group">
+<div class="relative flex items-center justify-center mt-1">
+<input class="peer sr-only" type="checkbox"/>
+<div class="w-6 h-6 rounded-full border-2 border-outline-variant peer-checked:bg-primary-container peer-checked:border-primary-container transition-all duration-300 flex items-center justify-center peer-checked:scale-110">
+<span class="material-symbols-outlined text-on-primary-container opacity-0 peer-checked:opacity-100 text-[18px] transition-opacity duration-300">check</span>
+</div>
+</div>
+<div>
+<p class="font-label-md text-label-md text-on-background group-hover:text-primary transition-colors">Granulated Sugar</p>
+<p class="font-body-md text-body-md text-on-surface-variant">350g</p>
+</div>
+</label>
+<!-- Item -->
+<label class="flex items-start gap-4 p-4 rounded-xl hover:bg-surface-container transition-colors cursor-pointer group">
+<div class="relative flex items-center justify-center mt-1">
+<input class="peer sr-only" type="checkbox"/>
+<div class="w-6 h-6 rounded-full border-2 border-outline-variant peer-checked:bg-primary-container peer-checked:border-primary-container transition-all duration-300 flex items-center justify-center peer-checked:scale-110">
+<span class="material-symbols-outlined text-on-primary-container opacity-0 peer-checked:opacity-100 text-[18px] transition-opacity duration-300">check</span>
+</div>
+</div>
+<div>
+<p class="font-label-md text-label-md text-on-background group-hover:text-primary transition-colors">Unsalted Butter</p>
+<p class="font-body-md text-body-md text-on-surface-variant">250g (room temp)</p>
+</div>
+</label>
+<!-- Item -->
+<label class="flex items-start gap-4 p-4 rounded-xl hover:bg-surface-container transition-colors cursor-pointer group">
+<div class="relative flex items-center justify-center mt-1">
+<input class="peer sr-only" type="checkbox"/>
+<div class="w-6 h-6 rounded-full border-2 border-outline-variant peer-checked:bg-primary-container peer-checked:border-primary-container transition-all duration-300 flex items-center justify-center peer-checked:scale-110">
+<span class="material-symbols-outlined text-on-primary-container opacity-0 peer-checked:opacity-100 text-[18px] transition-opacity duration-300">check</span>
+</div>
+</div>
+<div>
+<p class="font-label-md text-label-md text-on-background group-hover:text-primary transition-colors">Fresh Strawberries</p>
+<p class="font-body-md text-body-md text-on-surface-variant">500g (hulled &amp; sliced)</p>
+</div>
+</label>
+</div>
+</section>
+<!-- Method Section -->
+<section class="mb-xl">
+<h3 class="font-headline-md text-headline-md text-secondary mb-md flex items-center gap-3">
+<span class="material-symbols-outlined bg-surface-variant p-2 rounded-full text-secondary">restaurant_menu</span>
+                    Method of Preparation
+                </h3>
+<div class="flex flex-col gap-lg">
+<!-- Step 1 -->
+<div class="flex gap-6 relative">
+<div class="flex flex-col items-center">
+<div class="w-10 h-10 rounded-full bg-primary text-on-primary font-headline-sm flex items-center justify-center bubbly-shadow z-10 inner-glow">1</div>
+<div class="w-1 h-full bg-surface-variant absolute top-10 bottom-[-48px] rounded-full"></div>
+</div>
+<div class="flex-1 pb-4">
+<h4 class="font-headline-sm text-headline-sm text-on-background mb-2">Prepare the Dry Ingredients</h4>
+<p class="font-body-lg text-body-lg text-on-surface-variant leading-relaxed">
+                                Preheat your oven to 180°C (350°F). In a large, bubbly mixing bowl, whisk together the sifted flour, baking powder, and a pinch of salt. Ensure they are well aerated for a fluffy sponge.
+                            </p>
+</div>
+</div>
+<!-- Step 2 -->
+<div class="flex gap-6 relative">
+<div class="flex flex-col items-center">
+<div class="w-10 h-10 rounded-full bg-primary text-on-primary font-headline-sm flex items-center justify-center bubbly-shadow z-10 inner-glow">2</div>
+<div class="w-1 h-full bg-surface-variant absolute top-10 bottom-[-48px] rounded-full"></div>
+</div>
+<div class="flex-1 pb-4">
+<h4 class="font-headline-sm text-headline-sm text-on-background mb-2">Cream Butter and Sugar</h4>
+<p class="font-body-lg text-body-lg text-on-surface-variant leading-relaxed">
+                                In a separate stand mixer, cream the room-temperature butter and granulated sugar on medium speed until light, fluffy, and pale in color (about 4-5 minutes). Scrape down the sides of the bowl as needed.
+                            </p>
+</div>
+</div>
+<!-- Step 3 -->
+<div class="flex gap-6 relative">
+<div class="flex flex-col items-center">
+<div class="w-10 h-10 rounded-full bg-primary text-on-primary font-headline-sm flex items-center justify-center bubbly-shadow z-10 inner-glow">3</div>
+</div>
+<div class="flex-1 pb-4">
+<h4 class="font-headline-sm text-headline-sm text-on-background mb-2">Fold and Bake</h4>
+<p class="font-body-lg text-body-lg text-on-surface-variant leading-relaxed">
+                                Gently fold the dry ingredients into the wet mixture in three additions, alternating with buttermilk. Pour the batter into two prepared 8-inch round cake pans and bake for 30-35 minutes until a toothpick comes out clean.
+                            </p>
+</div>
+</div>
+</div>
+</section>
+<!-- Chef's Tip Card -->
+<section class="mt-xl">
+<div class="bg-tertiary-container text-on-tertiary-container p-lg rounded-xl bubbly-shadow relative overflow-hidden">
+<!-- Decorative background element -->
+<div class="absolute -right-10 -bottom-10 opacity-20">
+<span class="material-symbols-outlined text-[120px]">lightbulb</span>
+</div>
+<div class="relative z-10 flex gap-4 items-start">
+<div class="w-12 h-12 rounded-full bg-tertiary text-on-tertiary flex items-center justify-center flex-shrink-0 inner-glow">
+<span class="material-symbols-outlined">tips_and_updates</span>
+</div>
+<div>
+<h4 class="font-headline-sm text-headline-sm mb-2">Chef's Secret Tip</h4>
+<p class="font-body-lg text-body-lg leading-relaxed">
+                                For an extra burst of flavor, macerate the fresh strawberries in a tablespoon of sugar and a dash of lemon juice for 15 minutes before layering them into the cake. It creates a natural syrup that soaks beautifully into the sponge!
+                            </p>
+</div>
+</div>
+</div>
+</section>
+<!-- Bottom spacing -->
+<div class="h-20"></div>
+</div>
+</main>
+<script>
+        // Simple script to handle checkbox animations if needed beyond CSS
+        document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                const labelText = this.closest('label').querySelector('.text-on-background');
+                if(this.checked) {
+                    labelText.classList.add('line-through', 'text-outline');
+                } else {
+                    labelText.classList.remove('line-through', 'text-outline');
+                }
+            });
+        });
+    </script>
+</body></html>
