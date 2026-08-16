@@ -123,6 +123,10 @@ The palette centers on a cheerful, sweet foundation of Warm Pink and Dark Chocol
 
 The background is a creamy off-white (`#FAF0ED`) to maintain the "premium" feel while avoiding the harshness of pure white. Surfaces should prioritize these warm tones, using the yellow and mint sparingly to draw attention to interactive elements or celebratory feedback.
 
+**In practice**, two additional colors are used consistently across the app and are now part of the token set (`tailwind.config.js`), even though they weren't in the original palette description above:
+- `terracotta` (`#DF7159`) — a warm coral/orange used as a secondary CTA/highlight accent, roughly as often as `primary`.
+- `success` (`#2e6d3d`) — a dark forest green used for positive/success states, in place of the "Soft Mint" described above.
+
 ## Typography
 
 The design system utilizes **Comfortaa** across all levels to maintain a cohesive, bubbly, and approachable feel. The rounded terminals of the typeface mirror the "pill-shaped" UI components.

@@ -65,7 +65,13 @@ export default {
         "outline-variant": "#d2b7b0",
         "surface-variant": "#e8d5d1",
         "error": "#ba1a1a",
-        
+
+        // Colors used consistently across the app but not part of the original
+        // DESIGN.md palette description (see DESIGN.md "Colors" for the note).
+        "on-surface-strong": "#3e1d15",
+        "terracotta": "#DF7159",
+        "success": "#2e6d3d",
+
         // Aliases for shadcn components to not break entirely out of the box
         border: "#d2b7b0", // outline-variant
         input: "#d2b7b0",
