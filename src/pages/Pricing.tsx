@@ -1,19 +1,19 @@
 import { useEffect, useState, useMemo } from 'react';
-import { supabase } from '@/lib/supabase';
-import { useAuth } from '@/contexts/AuthContext';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { formatCurrencyInput, parseCurrencyInput } from '@/lib/utils';
+import { formatCurrencyInput, parseCurrencyInput, getUnitCost } from '@/lib/utils';
+import { useRecipes } from '@/hooks/useRecipes';
+import { usePricings } from '@/hooks/usePricings';
+import { useSettings } from '@/hooks/useSettings';
 
 export const Pricing = () => {
-  const { user } = useAuth();
-  const [loading, setLoading] = useState(true);
-  const [recipes, setRecipes] = useState<any[]>([]);
-  const [savedPricings, setSavedPricings] = useState<any[]>([]);
+  const { recipes, isLoading: recipesLoading } = useRecipes();
+  const { pricings: savedPricings, isLoading: pricingsLoading, savePricing, deletePricing } = usePricings();
+  const { settings, isLoading: settingsLoading } = useSettings();
+
   const [selectedRecipeId, setSelectedRecipeId] = useState<string>('');
   const [activeTab, setActiveTab] = useState<'listagem' | 'calculadora'>('listagem');
-  const [saving, setSaving] = useState(false);
 
   // Editable pricing fields
   const [packagingCost, setPackagingCost] = useState(formatCurrencyInput(0));
@@ -28,89 +28,35 @@ export const Pricing = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('todas');
 
+  // Seed the calculator's default cost variables from the user's settings, once loaded.
   useEffect(() => {
-    const fetchData = async () => {
-      if (!user) return;
-      
-      // Load Settings
-      const { data: settingsData } = await supabase
-        .from('user_settings')
-        .select('*')
-        .eq('id', user.id)
-        .single();
-        
-      if (settingsData) {
-        setLaborHourValue(formatCurrencyInput(settingsData.labor_hour_value));
-        setFixedCostsMonthly(formatCurrencyInput(settingsData.fixed_costs_monthly));
-        setEstimatedMonthlyProduction(settingsData.estimated_monthly_production.toString());
-        setCardFeePercent(settingsData.default_card_fee_percent.toString());
-        setProfitMarginPercent(settingsData.default_profit_margin_percent.toString());
-      }
-
-      // Load Recipes with ingredients
-      const { data: recipesData } = await supabase
-        .from('recipes')
-        .select(`
-          id, name, yield, prep_time_minutes,
-          recipe_ingredients(
-            quantity_used,
-            ingredients(purchase_price, purchase_quantity, purchase_unit)
-          )
-        `)
-        .eq('user_id', user.id)
-        .order('name');
-        
-      if (recipesData) {
-        setRecipes(recipesData);
-      }
-      
-      // Load saved pricings
-      const { data: pricingsData } = await supabase
-        .from('pricings')
-        .select(`*, recipes(name, yield, category)`)
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
-
-      if (pricingsData) {
-        setSavedPricings(pricingsData);
-      }
-      
-      setLoading(false);
-    };
-
-    fetchData();
-  }, [user]);
-
-  const fetchPricings = async () => {
-    if (!user) return;
-    const { data: pricingsData } = await supabase
-      .from('pricings')
-      .select(`*, recipes(name, yield, category)`)
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false });
-
-    if (pricingsData) {
-      setSavedPricings(pricingsData);
-    }
-  };
+    if (!settings) return;
+    setLaborHourValue(formatCurrencyInput(settings.labor_hour_value));
+    setFixedCostsMonthly(formatCurrencyInput(settings.fixed_costs_monthly));
+    setEstimatedMonthlyProduction(settings.estimated_monthly_production.toString());
+    setCardFeePercent(settings.default_card_fee_percent.toString());
+    setProfitMarginPercent(settings.default_profit_margin_percent.toString());
+    // Only seed once when settings first arrive, not every time the object identity changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [!!settings]);
 
   const selectedRecipe = useMemo(() => {
     return recipes.find(r => r.id === selectedRecipeId);
   }, [recipes, selectedRecipeId]);
 
   const uniqueCategories = useMemo(() => {
-    const ObjectCategoryList = savedPricings.map(p => p.recipes?.category || 'Sem Categoria');
-    return Array.from(new Set(ObjectCategoryList)).sort();
+    const categoryList = savedPricings.map(p => p.recipes?.category || 'Sem Categoria');
+    return Array.from(new Set(categoryList)).sort();
   }, [savedPricings]);
 
   const filteredPricings = useMemo(() => {
     return savedPricings.filter(p => {
       const recipeName = p.recipes?.name?.toLowerCase() || '';
       const recipeCategory = p.recipes?.category || 'Sem Categoria';
-      
+
       const matchesSearch = recipeName.includes(searchTerm.toLowerCase());
       const matchesCategory = categoryFilter === 'todas' || recipeCategory === categoryFilter;
-      
+
       return matchesSearch && matchesCategory;
     });
   }, [savedPricings, searchTerm, categoryFilter]);
@@ -120,14 +66,9 @@ export const Pricing = () => {
     if (!selectedRecipe) return null;
 
     // 1. Ingredients Cost
-    const totalIngredientsCost = selectedRecipe.recipe_ingredients.reduce((total: number, ri: any) => {
-      const { purchase_price, purchase_quantity, purchase_unit } = ri.ingredients || {};
-      let unitCost = 0;
-      if (purchase_price && purchase_quantity) {
-        if (purchase_unit === 'kg' || purchase_unit === 'litro') unitCost = purchase_price / (purchase_quantity * 1000);
-        else if (purchase_unit === 'duzia') unitCost = purchase_price / (purchase_quantity * 12);
-        else unitCost = purchase_price / purchase_quantity;
-      }
+    const totalIngredientsCost = selectedRecipe.recipe_ingredients.reduce((total, ri) => {
+      const ing = ri.ingredients;
+      const unitCost = ing ? getUnitCost(ing.purchase_price, ing.purchase_quantity, ing.purchase_unit) : 0;
       return total + (ri.quantity_used * unitCost);
     }, 0);
     const ingredientCostPerUnit = totalIngredientsCost / selectedRecipe.yield;
@@ -183,12 +124,10 @@ export const Pricing = () => {
   ]);
 
   const handleSavePricing = async () => {
-    if (!user || !selectedRecipeId || !calculations) return;
-    
-    setSaving(true);
-    const pricingData = {
+    if (!selectedRecipeId || !calculations) return;
+
+    await savePricing.mutateAsync({
       recipe_id: selectedRecipeId,
-      user_id: user.id,
       packaging_cost: parseCurrencyInput(packagingCost),
       labor_cost: calculations.laborCostPerUnit,
       fixed_costs: calculations.fixedCostPerUnit,
@@ -196,29 +135,17 @@ export const Pricing = () => {
       profit_margin_percent: parseFloat(profitMarginPercent) || 0,
       suggested_price: calculations.suggestedPrice,
       saved_price: savedPrice ? parseCurrencyInput(savedPrice) : null,
-    };
+    });
 
-    // Upsert pricing for this recipe
-    const existingPricing = savedPricings.find(p => p.recipe_id === selectedRecipeId);
-    
-    if (existingPricing) {
-      await supabase.from('pricings').update(pricingData).eq('id', existingPricing.id);
-    } else {
-      await supabase.from('pricings').insert({ ...pricingData, created_at: new Date().toISOString() });
-    }
-
-    await fetchPricings();
-    setSaving(false);
     setActiveTab('listagem');
   };
 
-  const handleDeletePricing = async (id: string) => {
+  const handleDeletePricing = (id: string) => {
     if (!confirm('Tem certeza que deseja excluir esta precificação?')) return;
-    await supabase.from('pricings').delete().eq('id', id);
-    await fetchPricings();
+    deletePricing.mutate(id);
   };
 
-  if (loading) return <div className="p-xl text-center text-on-surface-variant font-body-md">Carregando precificação...</div>;
+  if (recipesLoading || pricingsLoading || settingsLoading) return <div className="p-xl text-center text-on-surface-variant font-body-md">Carregando precificação...</div>;
 
   return (
     <div className="flex flex-col h-full w-full relative">
@@ -230,7 +157,7 @@ export const Pricing = () => {
         </div>
         <div className="flex items-center gap-2">
           {activeTab === 'listagem' ? (
-            <button 
+            <button
               onClick={() => {
                 setSelectedRecipeId('');
                 setSavedPrice('');
@@ -271,15 +198,15 @@ export const Pricing = () => {
           <div className="flex flex-col md:flex-row gap-4 mb-6 items-center">
             <div className="relative flex-1 w-full">
               <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px] z-10">search</span>
-              <Input 
-                type="text" 
-                placeholder="Buscar receita..." 
+              <Input
+                type="text"
+                placeholder="Buscar receita..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-12 pr-4 bg-surface border-2 border-outline-variant font-body-md rounded-2xl h-12"
               />
             </div>
-            
+
             <div className="flex gap-4 w-full md:w-auto">
               <div className="w-full md:w-48">
                 <Select value={categoryFilter} onValueChange={(val) => setCategoryFilter(val || 'todas')}>
@@ -289,7 +216,7 @@ export const Pricing = () => {
                   <SelectContent>
                     <SelectItem value="todas">Todas as Categorias</SelectItem>
                     {uniqueCategories.map(cat => (
-                      <SelectItem key={cat as string} value={cat as string}>{cat as string}</SelectItem>
+                      <SelectItem key={cat} value={cat}>{cat}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -306,7 +233,7 @@ export const Pricing = () => {
               <p className="font-body-md text-on-surface-variant max-w-md mb-6">
                 Você ainda não salvou a precificação de nenhuma receita. Use a calculadora para encontrar seu preço ideal.
               </p>
-              <button 
+              <button
                 onClick={() => setActiveTab('calculadora')}
                 className="bg-primary text-white font-bold text-[13px] px-6 py-3 rounded-full hover:bg-primary/90 active:scale-95 transition-all shadow-sm"
               >
@@ -335,7 +262,7 @@ export const Pricing = () => {
                       <span className="text-on-surface-variant font-medium">Preço Sugerido Base: <strong className="text-on-surface font-semibold">{pricing.suggested_price?.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</strong></span>
                     </div>
                   </div>
-                  
+
                   <div className="flex flex-row items-center gap-3 shrink-0 w-full lg:w-auto justify-between lg:justify-end pt-4 lg:pt-0 border-t border-dashed border-surface-container lg:border-t-0">
                     <div className="bg-[#FDF0EC] border border-[#F6DED8] rounded-xl px-4 py-2 flex flex-col items-center justify-center min-w-[120px]">
                       <span className="text-[10px] font-bold text-[#DF7159] tracking-wider uppercase">{pricing.saved_price ? 'Preço Definido' : 'Preço Sugerido'}</span>
@@ -343,7 +270,7 @@ export const Pricing = () => {
                         {(pricing.saved_price || pricing.suggested_price).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                       </strong>
                     </div>
-                    
+
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => {
@@ -359,8 +286,8 @@ export const Pricing = () => {
                         <span className="material-symbols-outlined text-[16px]">edit</span>
                         <span className="hidden sm:inline">Editar</span>
                       </button>
-                      
-                      <button 
+
+                      <button
                         onClick={() => handleDeletePricing(pricing.id)}
                         className="w-10 h-10 bg-surface-container-low rounded-xl flex items-center justify-center text-on-surface-variant hover:text-error hover:bg-error-container shadow-sm active:scale-95 transition-all"
                         title="Excluir"
@@ -378,10 +305,10 @@ export const Pricing = () => {
 
       {activeTab === 'calculadora' && (
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        
+
         {/* Left Column: Settings and Recipe Selection */}
         <div className="lg:col-span-5 flex flex-col gap-6">
-          
+
           <div className="bg-surface-container-lowest p-lg rounded-3xl shadow-sticker border-4 border-surface-container relative overflow-hidden">
             <div className="absolute top-0 right-0 w-32 h-32 bg-primary-fixed-dim opacity-20 blur-2xl -mr-10 -mt-10"></div>
             <h3 className="font-headline-sm text-on-surface mb-md relative z-10">1. Escolha a Receita</h3>
@@ -404,7 +331,7 @@ export const Pricing = () => {
           <div className={`bg-surface-container-lowest p-lg rounded-3xl shadow-sticker border-4 border-surface-container transition-opacity ${!selectedRecipe ? 'opacity-50 pointer-events-none' : ''}`}>
             <h3 className="font-headline-sm text-on-surface mb-2">2. Variáveis de Custo</h3>
             <p className="font-body-md text-on-surface-variant mb-6">Ajuste os valores para simular diferentes cenários nesta receita.</p>
-            
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label className="font-label-md text-on-surface-variant">Embalagem (R$/un)</Label>
@@ -434,7 +361,7 @@ export const Pricing = () => {
                   </div>
                   <input className="w-full h-2 bg-surface-variant rounded-full appearance-none cursor-pointer accent-tertiary" type="range" min="0" max="20" step="0.1" value={cardFeePercent} onChange={(e) => setCardFeePercent(e.target.value)} />
                 </div>
-                
+
                 <div className="space-y-3">
                   <div className="flex justify-between font-label-md">
                     <Label className="text-on-surface-variant">Margem de Lucro</Label>
@@ -452,12 +379,12 @@ export const Pricing = () => {
         <div className="lg:col-span-7">
           {selectedRecipe && calculations ? (
             <div className="flex flex-col gap-6 sticky top-24">
-              
+
               {/* Highlight Final Price Card */}
               <div className="bg-primary p-lg rounded-[3rem] shadow-sticker hover:shadow-[0_12px_24px_rgba(159,64,45,0.3)] transition-shadow relative overflow-hidden text-on-primary flex flex-col md:flex-row items-center justify-between gap-6 border-2 border-primary-container">
                 <div className="absolute -top-20 -left-20 w-64 h-64 bg-primary-container opacity-30 rounded-full blur-3xl pointer-events-none"></div>
                 <div className="absolute -bottom-10 -right-10 w-48 h-48 bg-on-primary-fixed-variant opacity-20 rounded-full pointer-events-none"></div>
-                
+
                 <div className="relative z-10 flex-1 text-center md:text-left">
                   <span className="inline-block bg-on-primary text-primary font-label-sm px-4 py-1.5 rounded-full mb-4 shadow-sm uppercase tracking-wider">
                     Preço Sugerido (Unidade)
@@ -484,7 +411,7 @@ export const Pricing = () => {
 
               {/* Detailed Breakdown Bento Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                
+
                 {/* Cost Breakdown */}
                 <div className="bg-surface-container-lowest p-md rounded-3xl shadow-sticker border-2 border-surface-container space-y-4">
                   <div className="flex items-center gap-3 mb-2">
@@ -493,7 +420,7 @@ export const Pricing = () => {
                     </div>
                     <h3 className="font-headline-sm text-on-surface">Custos por Unidade</h3>
                   </div>
-                  
+
                   <div className="space-y-3 font-body-md">
                     <div className="flex justify-between items-end border-b-2 border-dashed border-surface-variant pb-2">
                       <span className="text-on-surface-variant">Ingredientes</span>
@@ -523,20 +450,20 @@ export const Pricing = () => {
                       </div>
                       <h3 className="font-headline-sm text-on-surface">Composição Final</h3>
                     </div>
-                    
+
                     <div className="space-y-4">
                       <div className="bg-surface-container p-3 rounded-xl border border-surface-variant flex justify-between items-center">
                         <span className="font-label-md text-on-surface-variant">Taxas ({cardFeePercent}%)</span>
                         <span className="font-headline-sm text-error">{calculations.feeAmount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
                       </div>
-                      
+
                       <div className="bg-secondary-fixed/30 p-3 rounded-xl border border-secondary/20 flex justify-between items-center">
                         <span className="font-label-md text-on-surface-variant">Lucro Líquido ({profitMarginPercent}%)</span>
                         <span className="font-headline-sm text-secondary font-bold">{calculations.profitAmount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="text-center pt-2">
                     <p className="font-body-md text-on-surface-variant text-sm">
                       Ajuste as margens na aba ao lado para visualizar os impactos imediatamente.
@@ -549,24 +476,24 @@ export const Pricing = () => {
               <div className="bg-surface-container-lowest p-lg rounded-3xl shadow-sticker border-2 border-primary-container space-y-4 flex flex-col md:flex-row items-center gap-6 justify-between">
                 <div className="flex-1 w-full space-y-2">
                   <Label className="font-label-md text-on-surface-variant">Preço Final de Venda (R$) - Opcional</Label>
-                  <Input 
-                    className="bg-surface border-2 border-outline-variant font-body-md h-12 rounded-xl focus-visible:ring-primary-container text-lg font-bold text-primary placeholder:font-normal" 
-                    type="text" 
-                    inputMode="numeric" 
+                  <Input
+                    className="bg-surface border-2 border-outline-variant font-body-md h-12 rounded-xl focus-visible:ring-primary-container text-lg font-bold text-primary placeholder:font-normal"
+                    type="text"
+                    inputMode="numeric"
                     placeholder="Ex: 25,00 (Arredondamento)"
-                    value={savedPrice} 
-                    onChange={(e) => setSavedPrice(formatCurrencyInput(e.target.value))} 
+                    value={savedPrice}
+                    onChange={(e) => setSavedPrice(formatCurrencyInput(e.target.value))}
                   />
                   <p className="text-xs text-on-surface-variant">Se deixar em branco, o <strong>Preço Sugerido</strong> será utilizado.</p>
                 </div>
-                
-                <button 
+
+                <button
                   onClick={handleSavePricing}
-                  disabled={saving}
+                  disabled={savePricing.isPending}
                   className="w-full md:w-auto shrink-0 flex items-center justify-center gap-2 bg-primary text-white font-bold text-[14px] px-8 py-3.5 rounded-[1.25rem] hover:bg-primary/90 active:scale-95 transition-all shadow-[0_4px_12px_rgba(159,64,45,0.2)] disabled:opacity-50 h-12 mt-6 md:mt-0"
                 >
-                  <span className="material-symbols-outlined text-[20px]">{saving ? 'sync' : 'save'}</span>
-                  {saving ? 'Salvando...' : 'Salvar Precificação'}
+                  <span className="material-symbols-outlined text-[20px]">{savePricing.isPending ? 'sync' : 'save'}</span>
+                  {savePricing.isPending ? 'Salvando...' : 'Salvar Precificação'}
                 </button>
               </div>
 
@@ -584,4 +511,3 @@ export const Pricing = () => {
     </div>
   );
 };
-
