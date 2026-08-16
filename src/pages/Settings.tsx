@@ -1,96 +1,47 @@
 import { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase';
-import { useAuth } from '@/contexts/AuthContext';
+import { Controller, useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Toast } from '@/components/ui/toast';
-
-type SettingsForm = {
-  labor_hour_value: number;
-  fixed_costs_monthly: number;
-  estimated_monthly_production: number;
-  default_card_fee_percent: number;
-  default_profit_margin_percent: number;
-  allow_out_of_stock_production: 'Sim' | 'Não' | 'Confirmar' | 'yes' | 'no' | 'confirm';
-};
+import { useSettings, settingsSchema, type SettingsFormValues, type SettingsFormInput } from '@/hooks/useSettings';
 
 export const Settings = () => {
-  const { user } = useAuth();
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [settings, setSettings] = useState<SettingsForm | null>(null);
+  const { settings, isLoading, updateSettings } = useSettings();
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
-  const [successMessage, setSuccessMessage] = useState('');
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const {
+    control,
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors, isSubmitting },
+  } = useForm<SettingsFormInput, unknown, SettingsFormValues>({
+    resolver: zodResolver(settingsSchema),
+    // The Select field must never start `undefined`, or base-ui's Select locks itself
+    // into "uncontrolled" mode on first render and ignores the real value set by reset() later.
+    defaultValues: { allow_out_of_stock_production: 'confirm' },
+  });
 
   useEffect(() => {
-    const fetchSettings = async () => {
-      if (!user) return;
-      
-      const { data, error } = await supabase
-        .from('user_settings')
-        .select('*')
-        .eq('id', user.id)
-        .single();
-        
-      if (data) {
-        setSettings(data as SettingsForm);
-      } else if (error && error.code === 'PGRST116') {
-        // No row exists, create one
-        const defaultSettings: SettingsForm = {
-          labor_hour_value: 15.00,
-          fixed_costs_monthly: 0.00,
-          estimated_monthly_production: 1,
-          default_card_fee_percent: 3.00,
-          default_profit_margin_percent: 40.00,
-          allow_out_of_stock_production: 'confirm',
-        };
-        await supabase.from('user_settings').insert({ id: user.id, ...defaultSettings });
-        setSettings(defaultSettings);
-      }
-      setLoading(false);
-    };
+    if (settings) reset(settings);
+  }, [settings, reset]);
 
-    fetchSettings();
-  }, [user]);
-
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (!user || !settings) return;
-    setSaving(true);
-    
-    const { error } = await supabase
-      .from('user_settings')
-      .update({
-        labor_hour_value: settings.labor_hour_value,
-        fixed_costs_monthly: settings.fixed_costs_monthly,
-        estimated_monthly_production: settings.estimated_monthly_production,
-        default_card_fee_percent: settings.default_card_fee_percent,
-        default_profit_margin_percent: settings.default_profit_margin_percent,
-        allow_out_of_stock_production: settings.allow_out_of_stock_production,
-      })
-      .eq('id', user.id);
-      
-    setSaving(false);
-    
-    if (error) {
-      console.error('Erro ao salvar configurações:', error);
-      alert('Erro ao salvar configurações: ' + error.message);
-      return;
+  const onSubmit = async (values: SettingsFormValues) => {
+    try {
+      await updateSettings.mutateAsync(values);
+      setErrorMessage(null);
+      setIsSuccessModalOpen(true);
+    } catch (err) {
+      setErrorMessage(err instanceof Error ? err.message : 'Erro ao salvar configurações');
     }
-    
-    setSuccessMessage('Configurações salvas com sucesso!');
-    setIsSuccessModalOpen(true);
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setSettings(prev => prev ? { ...prev, [name]: parseFloat(value) || 0 } : null);
-  };
-
-  if (loading || !settings) {
+  if (isLoading || !settings) {
     return <div className="p-4">Carregando configurações...</div>;
   }
 
@@ -104,7 +55,7 @@ export const Settings = () => {
       </header>
 
       <Card>
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit(onSubmit)} noValidate>
           <CardHeader>
             <CardTitle>Custos e Margens</CardTitle>
             <CardDescription>
@@ -117,103 +68,106 @@ export const Settings = () => {
                 <Label htmlFor="labor_hour_value">Valor da sua hora de trabalho (R$)</Label>
                 <Input
                   id="labor_hour_value"
-                  name="labor_hour_value"
                   type="number"
                   step="0.01"
                   min="0"
-                  value={settings.labor_hour_value}
-                  onChange={handleChange}
+                  aria-invalid={!!errors.labor_hour_value}
+                  {...register('labor_hour_value')}
                 />
+                {errors.labor_hour_value && <p className="text-[12px] text-error">{errors.labor_hour_value.message}</p>}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="fixed_costs_monthly">Custos fixos mensais (R$)</Label>
                 <Input
                   id="fixed_costs_monthly"
-                  name="fixed_costs_monthly"
                   type="number"
                   step="0.01"
                   min="0"
-                  value={settings.fixed_costs_monthly}
-                  onChange={handleChange}
+                  aria-invalid={!!errors.fixed_costs_monthly}
+                  {...register('fixed_costs_monthly')}
                 />
+                {errors.fixed_costs_monthly && <p className="text-[12px] text-error">{errors.fixed_costs_monthly.message}</p>}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="estimated_monthly_production">Produção mensal estimada (unid/receitas)</Label>
                 <Input
                   id="estimated_monthly_production"
-                  name="estimated_monthly_production"
                   type="number"
                   step="1"
                   min="1"
-                  value={settings.estimated_monthly_production}
-                  onChange={handleChange}
+                  aria-invalid={!!errors.estimated_monthly_production}
+                  {...register('estimated_monthly_production')}
                 />
+                {errors.estimated_monthly_production && <p className="text-[12px] text-error">{errors.estimated_monthly_production.message}</p>}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="default_card_fee_percent">Taxa padrão de cartão/Pix (%)</Label>
                 <Input
                   id="default_card_fee_percent"
-                  name="default_card_fee_percent"
                   type="number"
                   step="0.01"
                   min="0"
                   max="100"
-                  value={settings.default_card_fee_percent}
-                  onChange={handleChange}
+                  aria-invalid={!!errors.default_card_fee_percent}
+                  {...register('default_card_fee_percent')}
                 />
+                {errors.default_card_fee_percent && <p className="text-[12px] text-error">{errors.default_card_fee_percent.message}</p>}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="default_profit_margin_percent">Margem de lucro desejada (%)</Label>
                 <Input
                   id="default_profit_margin_percent"
-                  name="default_profit_margin_percent"
                   type="number"
                   step="0.01"
                   min="0"
                   max="100"
-                  value={settings.default_profit_margin_percent}
-                  onChange={handleChange}
+                  aria-invalid={!!errors.default_profit_margin_percent}
+                  {...register('default_profit_margin_percent')}
                 />
+                {errors.default_profit_margin_percent && <p className="text-[12px] text-error">{errors.default_profit_margin_percent.message}</p>}
               </div>
               <div className="space-y-2 md:col-span-2 mt-4 pt-4 border-t border-surface-container">
                 <Label>Permitir baixa sem estoque?</Label>
                 <div className="text-[13px] text-on-surface-variant mb-2">
                   Escolha o que acontece ao tentar finalizar uma receita sem ter os ingredientes necessários em estoque.
                 </div>
-                <Select
-                  value={
-                    settings.allow_out_of_stock_production === 'confirm' ? 'Confirmar' : 
-                    settings.allow_out_of_stock_production === 'yes' ? 'Sim' : 
-                    settings.allow_out_of_stock_production === 'no' ? 'Não' : 
-                    (settings.allow_out_of_stock_production || 'Confirmar')
-                  }
-                  onValueChange={(val: any) => setSettings(prev => prev ? { ...prev, allow_out_of_stock_production: val } : null)}
-                >
-                  <SelectTrigger className="w-full bg-surface border-2 border-outline-variant font-body-md rounded-2xl !h-12">
-                    <SelectValue placeholder="Selecione..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Sim">Sim - Finaliza a receita ignorando a baixa no estoque automático (não deduz)</SelectItem>
-                    <SelectItem value="Não">Não - Bloqueia a finalização da receita</SelectItem>
-                    <SelectItem value="Confirmar">Confirmar - Pergunta se deseja finalizar sem dar baixa</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Controller
+                  control={control}
+                  name="allow_out_of_stock_production"
+                  render={({ field }) => (
+                    <Select value={field.value} onValueChange={(val) => field.onChange(val || 'confirm')}>
+                      <SelectTrigger className="w-full bg-surface border-2 border-outline-variant font-body-md rounded-2xl !h-12">
+                        <SelectValue placeholder="Selecione...">
+                          {(value: SettingsFormValues['allow_out_of_stock_production']) =>
+                            value === 'yes' ? 'Sim' : value === 'no' ? 'Não' : 'Confirmar'
+                          }
+                        </SelectValue>
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="yes">Sim - Finaliza a receita ignorando a baixa no estoque automático (não deduz)</SelectItem>
+                        <SelectItem value="no">Não - Bloqueia a finalização da receita</SelectItem>
+                        <SelectItem value="confirm">Confirmar - Pergunta se deseja finalizar sem dar baixa</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
               </div>
             </div>
           </CardContent>
-          <CardFooter>
-            <Button type="submit" disabled={saving}>
-              {saving ? 'Salvando...' : 'Salvar configurações'}
+          <CardFooter className="flex-col items-stretch gap-2">
+            {errorMessage && <p className="text-[13px] text-error">{errorMessage}</p>}
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? 'Salvando...' : 'Salvar configurações'}
             </Button>
           </CardFooter>
         </form>
       </Card>
 
-      <Toast 
-        open={isSuccessModalOpen} 
-        onOpenChange={setIsSuccessModalOpen} 
-        title="Sucesso!" 
-        description={successMessage} 
+      <Toast
+        open={isSuccessModalOpen}
+        onOpenChange={setIsSuccessModalOpen}
+        title="Sucesso!"
+        description="Configurações salvas com sucesso!"
       />
     </div>
   );
