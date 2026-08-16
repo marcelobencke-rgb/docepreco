@@ -1,39 +1,20 @@
-import { useEffect, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { supabase } from '@/lib/supabase';
-import { useAuth } from '@/contexts/AuthContext';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Toast } from '@/components/ui/toast';
-
-type Recipe = {
-  id: string;
-  name: string;
-  yield: number;
-  prep_time_minutes: number;
-  instructions: string | null;
-  notes: string | null;
-  production_count?: number;
-  recipe_ingredients: {
-    quantity_used: number;
-    ingredients: {
-      id: string;
-      name: string;
-      purchase_unit: string;
-      current_stock: number;
-    } | null;
-  }[];
-};
+import { useRecipes } from '@/hooks/useRecipes';
+import { useSettings } from '@/hooks/useSettings';
 
 export const RecipeCatalog = () => {
-  const { user } = useAuth();
-  const [recipes, setRecipes] = useState<Recipe[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
+  const { recipes, isLoading, finishProduction } = useRecipes();
+  const { settings } = useSettings();
+  const outOfStockSetting = settings?.allow_out_of_stock_production ?? 'confirm';
+
+  const [selectedRecipeId, setSelectedRecipeId] = useState<string | null>(null);
   const [checkedIngredients, setCheckedIngredients] = useState<Set<number>>(new Set());
-  const [isFinishing, setIsFinishing] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('todas');
   const [sortOrder, setSortOrder] = useState('recentes');
@@ -41,41 +22,14 @@ export const RecipeCatalog = () => {
   const [productionMultiplier, setProductionMultiplier] = useState(1);
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
-  const [outOfStockSetting, setOutOfStockSetting] = useState('confirm');
   const [shortageDetails, setShortageDetails] = useState<{ name: string; missing: number; unit: string }[]>([]);
   const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
   const [isConfirmShortageModalOpen, setIsConfirmShortageModalOpen] = useState(false);
 
-  useEffect(() => {
-    const fetchRecipes = async () => {
-      if (!user) return;
-      const { data } = await supabase
-        .from('recipes')
-        .select(`
-          *,
-          recipe_ingredients(
-            quantity_used,
-            ingredients(id, name, purchase_unit, current_stock)
-          )
-        `)
-        .eq('user_id', user.id)
-        .order('name');
-      
-      if (data) setRecipes(data as any);
-      
-      const { data: settingsData } = await supabase
-        .from('user_settings')
-        .select('allow_out_of_stock_production')
-        .eq('id', user.id)
-        .single();
-      if (settingsData) {
-        setOutOfStockSetting(settingsData.allow_out_of_stock_production || 'confirm');
-      }
-
-      setLoading(false);
-    };
-    fetchRecipes();
-  }, [user]);
+  const selectedRecipe = useMemo(
+    () => recipes.find(r => r.id === selectedRecipeId) ?? null,
+    [recipes, selectedRecipeId]
+  );
 
   const getUnitDisplay = (unit: string) => {
     if (unit === 'kg' || unit === 'g') return 'g';
@@ -83,7 +37,7 @@ export const RecipeCatalog = () => {
     return 'un';
   };
 
-  if (loading) return <div className="p-xl text-center text-on-surface-variant font-body-md">Carregando cardápio...</div>;
+  if (isLoading) return <div className="p-xl text-center text-on-surface-variant font-body-md">Carregando cardápio...</div>;
 
   const toggleIngredient = (idx: number) => {
     const newSet = new Set(checkedIngredients);
@@ -101,9 +55,8 @@ export const RecipeCatalog = () => {
   };
 
   const handleConfirmFinish = async () => {
-    if (!selectedRecipe || !user) return;
-    
-    // Check shortages
+    if (!selectedRecipe) return;
+
     const shortages: { name: string; missing: number; unit: string }[] = [];
     for (const ri of selectedRecipe.recipe_ingredients) {
       if (ri.ingredients) {
@@ -119,15 +72,15 @@ export const RecipeCatalog = () => {
     }
 
     if (shortages.length > 0) {
-      if (outOfStockSetting === 'no' || outOfStockSetting === 'Não') {
+      if (outOfStockSetting === 'no') {
          setShortageDetails(shortages);
          setIsErrorModalOpen(true);
          return;
-      } else if (outOfStockSetting === 'confirm' || outOfStockSetting === 'Confirmar') {
+      } else if (outOfStockSetting === 'confirm') {
          setShortageDetails(shortages);
          setIsConfirmShortageModalOpen(true);
          return;
-      } else if (outOfStockSetting === 'yes' || outOfStockSetting === 'Sim') {
+      } else if (outOfStockSetting === 'yes') {
          await executeFinish(true);
          return;
       }
@@ -137,66 +90,32 @@ export const RecipeCatalog = () => {
   };
 
   const executeFinish = async (skipDeduction: boolean) => {
-    if (!selectedRecipe || !user) return;
-    setIsFinishing(true);
-    
-    // 1. Update Production Count
-    const newCount = (selectedRecipe.production_count || 0) + productionMultiplier;
-    const { error } = await supabase
-      .from('recipes')
-      .update({ production_count: newCount })
-      .eq('id', selectedRecipe.id);
-      
-    // 2. Deduct Stock & Create Movements
-    if (!skipDeduction) {
-      for (const ri of selectedRecipe.recipe_ingredients) {
-        if (ri.ingredients) {
-          const totalUsed = ri.quantity_used * productionMultiplier;
-          const newStock = Math.max(0, Number(ri.ingredients.current_stock) - totalUsed);
-          
-          await supabase
-            .from('ingredients')
-            .update({ current_stock: newStock })
-            .eq('id', ri.ingredients.id);
-            
-          await supabase
-            .from('stock_movements')
-            .insert({
-              ingredient_id: ri.ingredients.id,
-              user_id: user.id,
-              type: 'out',
-              quantity: totalUsed,
-              reason: 'recipe_production',
-              reference_id: selectedRecipe.id
-            });
-        }
-      }
-    }
-      
-    if (!error) {
-      const updatedRecipe = { ...selectedRecipe, production_count: newCount };
-      setSelectedRecipe(null);
-      setRecipes(recipes.map(r => r.id === updatedRecipe.id ? updatedRecipe : r));
+    if (!selectedRecipe) return;
+
+    try {
+      await finishProduction.mutateAsync({ recipe: selectedRecipe, multiplier: productionMultiplier, skipDeduction });
+
+      setSelectedRecipeId(null);
       setCheckedIngredients(new Set<number>());
       setIsProductionModalOpen(false);
       setIsConfirmShortageModalOpen(false);
-      setSuccessMessage(skipDeduction 
+      setSuccessMessage(skipDeduction
         ? `Receita finalizada! Produzido: ${productionMultiplier} lote(s). A baixa de estoque foi ignorada por falta de insumos.`
         : `Receita finalizada! Produzido: ${productionMultiplier} lote(s). O estoque dos insumos foi descontado.`);
       setIsSuccessModalOpen(true);
+    } catch {
+      // The mutation's error state is available via finishProduction.error if a toast is desired here.
     }
-    
-    setIsFinishing(false);
   };
 
   const sharedModals = (
     <>
       {/* Success Toast */}
-      <Toast 
-        open={isSuccessModalOpen} 
-        onOpenChange={setIsSuccessModalOpen} 
-        title="Sucesso!" 
-        description={successMessage} 
+      <Toast
+        open={isSuccessModalOpen}
+        onOpenChange={setIsSuccessModalOpen}
+        title="Sucesso!"
+        description={successMessage}
       />
 
       {/* Error Modal */}
@@ -217,7 +136,7 @@ export const RecipeCatalog = () => {
               </div>
             ))}
           </div>
-          <button 
+          <button
             onClick={() => setIsErrorModalOpen(false)}
             className="w-full bg-primary text-white font-bold py-3 rounded-xl hover:bg-primary/90 active:scale-95 transition-all shadow-sm"
           >
@@ -248,19 +167,19 @@ export const RecipeCatalog = () => {
             Deseja finalizar a receita mesmo assim? A baixa no estoque destes insumos será ignorada para evitar estoque negativo.
           </p>
           <div className="flex gap-4">
-            <button 
+            <button
               onClick={() => setIsConfirmShortageModalOpen(false)}
               className="flex-1 bg-surface-container text-on-surface font-bold py-3 rounded-xl hover:bg-surface-container-high active:scale-95 transition-all"
-              disabled={isFinishing}
+              disabled={finishProduction.isPending}
             >
               Cancelar
             </button>
-            <button 
+            <button
               onClick={() => executeFinish(true)}
               className="flex-1 bg-primary text-white font-bold py-3 rounded-xl hover:bg-primary/90 active:scale-95 transition-all shadow-sm flex items-center justify-center gap-2"
-              disabled={isFinishing}
+              disabled={finishProduction.isPending}
             >
-              {isFinishing ? 'Salvando...' : 'Finalizar Receita'}
+              {finishProduction.isPending ? 'Salvando...' : 'Finalizar Receita'}
             </button>
           </div>
         </DialogContent>
@@ -272,13 +191,13 @@ export const RecipeCatalog = () => {
   if (selectedRecipe) {
     return (
       <div className="flex flex-col gap-6 w-full max-w-[1000px] mx-auto items-start animate-in fade-in zoom-in-95 duration-500 pb-20">
-        
+
         {/* Top Back Button */}
-        <button 
+        <button
           onClick={() => {
-            setSelectedRecipe(null);
+            setSelectedRecipeId(null);
             setCheckedIngredients(new Set());
-          }} 
+          }}
           className="flex items-center gap-2 text-primary/70 hover:text-primary transition-colors font-label-md bg-transparent px-2 py-1 rounded-full hover:bg-primary/5"
         >
           <span className="material-symbols-outlined text-[20px]">arrow_back</span>
@@ -286,22 +205,22 @@ export const RecipeCatalog = () => {
         </button>
 
         <div className="flex flex-col md:flex-row gap-10 lg:gap-16 w-full items-start relative">
-          
+
           {/* Details Content */}
           <div className="w-full flex flex-col pt-2 md:pt-4">
           <div className="flex gap-2 mb-4 items-center justify-between">
             <span className="bg-[#f2e6e3] text-[#7a5642] font-label-sm text-[10px] px-3 py-1 rounded-full uppercase tracking-wider">Ficha Técnica</span>
-            
-            <button 
+
+            <button
               onClick={handleFinishRecipe}
-              disabled={isFinishing}
+              disabled={finishProduction.isPending}
               className="bg-primary text-white font-label-md px-5 py-2.5 rounded-full flex items-center gap-2 shadow-sm hover:scale-105 active:scale-95 transition-all disabled:opacity-70"
             >
               <span className="material-symbols-outlined text-[18px]">done_all</span>
-              {isFinishing ? 'Finalizando...' : 'Finalizar Receita'}
+              {finishProduction.isPending ? 'Finalizando...' : 'Finalizar Receita'}
             </button>
           </div>
-          
+
           <h1 className="font-display-lg text-4xl md:text-5xl text-primary font-bold mb-8 leading-tight">{selectedRecipe.name}</h1>
 
           {/* Stats Container - Soft Pill */}
@@ -313,7 +232,7 @@ export const RecipeCatalog = () => {
                <span className="text-[9px] uppercase tracking-[0.15em] text-[#7a5642] mb-1">Preparo</span>
                <span className="font-display-sm text-xl text-[#3e1d15] font-semibold">{selectedRecipe.prep_time_minutes} Min</span>
              </div>
-             
+
              <div className="flex flex-col items-center justify-center flex-1 border-x border-[#eecfcd]/50">
                <div className="w-8 h-8 rounded-full bg-[#f3d9d2] text-[#9f402d] flex items-center justify-center mb-2">
                  <span className="material-symbols-outlined text-[16px]">group</span>
@@ -329,7 +248,7 @@ export const RecipeCatalog = () => {
                <span className="text-[9px] uppercase tracking-[0.15em] text-[#7a5642] mb-1">Ingredientes</span>
                <span className="font-display-sm text-xl text-[#3e1d15] font-semibold">{selectedRecipe.recipe_ingredients.length} Itens</span>
              </div>
-             
+
              {/* Decorative squiggly line (simulated with a subtle gradient bar at bottom) */}
              <div className="absolute bottom-0 inset-x-0 h-1 bg-gradient-to-r from-transparent via-[#e2725b]/20 to-transparent"></div>
           </div>
@@ -346,8 +265,8 @@ export const RecipeCatalog = () => {
               {selectedRecipe.recipe_ingredients.map((ri, idx) => {
                 const isChecked = checkedIngredients.has(idx);
                 return (
-                  <div 
-                    key={idx} 
+                  <div
+                    key={idx}
                     onClick={() => toggleIngredient(idx)}
                     className="flex gap-3 items-start cursor-pointer group"
                   >
@@ -377,7 +296,7 @@ export const RecipeCatalog = () => {
               </div>
               Modo de Preparo
             </h3>
-            
+
             {/* Split instructions into simulated steps if they have newlines, else single block */}
             <div className="flex flex-col gap-6">
               {selectedRecipe.instructions ? (
@@ -386,8 +305,8 @@ export const RecipeCatalog = () => {
                     <div className="w-6 h-6 rounded-full bg-[#9f402d] text-white flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">
                       {idx + 1}
                     </div>
-                    <div 
-                      className="font-body-md text-[#4a322b] leading-relaxed [&>b]:font-bold [&>i]:italic [&>u]:underline [&>b]:text-primary" 
+                    <div
+                      className="font-body-md text-[#4a322b] leading-relaxed [&>b]:font-bold [&>i]:italic [&>u]:underline [&>b]:text-primary"
                       dangerouslySetInnerHTML={{ __html: step.replace(/\n/g, '<br/>') }}
                     />
                   </div>
@@ -412,7 +331,7 @@ export const RecipeCatalog = () => {
               </div>
             </div>
           )}
-          
+
           {/* Production Modal */}
           <Dialog open={isProductionModalOpen} onOpenChange={setIsProductionModalOpen}>
             <DialogContent className="sm:max-w-[400px] bg-surface-container-lowest border-2 border-primary-container rounded-3xl">
@@ -425,9 +344,9 @@ export const RecipeCatalog = () => {
                 </p>
                 <div className="space-y-2">
                   <Label className="text-on-surface">Quantidade (lotes produzidos)</Label>
-                  <Input 
-                    type="number" 
-                    min="1" 
+                  <Input
+                    type="number"
+                    min="1"
                     step="1"
                     value={productionMultiplier}
                     onChange={(e) => setProductionMultiplier(Number(e.target.value))}
@@ -435,18 +354,18 @@ export const RecipeCatalog = () => {
                   />
                 </div>
                 <div className="flex justify-end gap-2 pt-2">
-                  <button 
+                  <button
                     onClick={() => setIsProductionModalOpen(false)}
                     className="px-6 py-3 font-label-md text-on-surface hover:bg-surface-container-high rounded-full transition-colors"
                   >
                     Cancelar
                   </button>
-                  <button 
+                  <button
                     onClick={handleConfirmFinish}
-                    disabled={isFinishing}
+                    disabled={finishProduction.isPending}
                     className="px-6 py-3 bg-primary text-white font-bold text-[13px] rounded-full hover:bg-primary/90 active:scale-95 transition-all flex items-center gap-2"
                   >
-                    {isFinishing ? 'Salvando...' : 'Confirmar Baixa'}
+                    {finishProduction.isPending ? 'Salvando...' : 'Confirmar Baixa'}
                   </button>
                 </div>
               </div>
@@ -463,16 +382,10 @@ export const RecipeCatalog = () => {
   // Render Grid View
   const filteredRecipes = recipes
     .filter(r => r.name.toLowerCase().includes(searchTerm.toLowerCase()))
-    .filter(_r => {
-      if (categoryFilter === 'todas') return true;
-      // Depending on your actual recipe category values in DB, adapt if needed.
-      // E.g., if there's no category in Recipe yet, we might skip filtering or assume. 
-      // For now, assume it exists or just pass true if undefined.
-      return true; // We don't have recipe categories in DB yet! Wait... I'll check.
-    })
+    .filter(() => categoryFilter === 'todas' || true) // We don't have recipe categories in DB yet!
     .sort((a, b) => {
       if (sortOrder === 'az') return a.name.localeCompare(b.name);
-      if (sortOrder === 'antigas') return a.id.localeCompare(b.id); // Or created_at if exists
+      if (sortOrder === 'antigas') return a.id.localeCompare(b.id);
       return b.id.localeCompare(a.id); // 'recentes' - default fallback
     });
 
@@ -497,9 +410,9 @@ export const RecipeCatalog = () => {
       <div className="flex flex-col md:flex-row gap-4 mb-10 items-center">
         <div className="relative flex-1 w-full">
           <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px] z-10">search</span>
-          <Input 
-            type="text" 
-            placeholder="Buscar receitas..." 
+          <Input
+            type="text"
+            placeholder="Buscar receitas..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-12 pr-4 bg-surface border-2 border-outline-variant font-body-md rounded-2xl h-12"
@@ -543,9 +456,9 @@ export const RecipeCatalog = () => {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {filteredRecipes.map(recipe => (
-            <div 
-              key={recipe.id} 
-              onClick={() => setSelectedRecipe(recipe)}
+            <div
+              key={recipe.id}
+              onClick={() => setSelectedRecipeId(recipe.id)}
               className="group cursor-pointer bg-white p-5 rounded-[2rem] shadow-[0_4px_20px_rgba(159,64,45,0.05)] hover:shadow-[0_8px_30px_rgba(159,64,45,0.1)] hover:-translate-y-1 transition-all flex flex-col items-center"
             >
               <h3 className="font-display-md text-[20px] text-[#7A3326] text-center leading-tight mb-2 group-hover:text-[#DF7159] transition-colors pt-2">{recipe.name}</h3>
@@ -554,12 +467,12 @@ export const RecipeCatalog = () => {
                 <span className="w-1 h-1 rounded-full bg-[#D9C4C0]"></span>
                 <span className="flex items-center gap-1">
                   <span className="material-symbols-outlined text-[14px]">timer</span>
-                  {recipe.prep_time_minutes >= 60 
+                  {recipe.prep_time_minutes >= 60
                     ? `${Math.floor(recipe.prep_time_minutes / 60)}h ${recipe.prep_time_minutes % 60 > 0 ? `${recipe.prep_time_minutes % 60}m` : ''}`
                     : `${recipe.prep_time_minutes}m`}
                 </span>
               </div>
-              
+
               <div className="flex items-center justify-center w-full mt-auto">
                 <div className="flex items-center justify-center gap-1.5 text-[#DF7159] bg-[#FFF4F2] border border-[#DF7159]/20 text-[12px] px-4 py-1.5 rounded-full font-medium w-full">
                   <span className="material-symbols-outlined text-[14px]">check</span>

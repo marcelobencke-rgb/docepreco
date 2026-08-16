@@ -31,3 +31,11 @@ export const parseCurrencyInput = (value: string) => {
   const cleanValue = value.replace(/\./g, '').replace(',', '.');
   return parseFloat(cleanValue) || 0;
 };
+
+/** Cost per base unit (g/ml/un) for an ingredient bought at `price` per `qty` `unit`s. */
+export const getUnitCost = (price: number, qty: number, unit: string) => {
+  if (!price || !qty) return 0;
+  if (unit === 'kg' || unit === 'litro') return price / (qty * 1000);
+  if (unit === 'duzia') return price / (qty * 12);
+  return price / qty;
+};
