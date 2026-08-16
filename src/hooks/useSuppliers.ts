@@ -31,6 +31,29 @@ async function fetchSuppliers(userId: string): Promise<Supplier[]> {
   return data ?? [];
 }
 
+/**
+ * Returns the id of an existing supplier matching `name` (case-insensitive) among
+ * `knownSuppliers`, or creates a new one. Shared by any mutation that lets the user
+ * type a supplier name inline (stock movements, shopping list "finish purchase").
+ */
+export async function findOrCreateSupplierId(
+  userId: string,
+  name: string,
+  knownSuppliers: Pick<Supplier, 'id' | 'name'>[]
+): Promise<string> {
+  const trimmed = name.trim();
+  const existing = knownSuppliers.find((s) => s.name.toLowerCase() === trimmed.toLowerCase());
+  if (existing) return existing.id;
+
+  const { data, error } = await supabase
+    .from('suppliers')
+    .insert({ user_id: userId, name: trimmed })
+    .select('id')
+    .single();
+  if (error) throw error;
+  return data.id as string;
+}
+
 export function useSuppliers() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -87,23 +110,8 @@ export function useSuppliers() {
     onSuccess: invalidate,
   });
 
-  /** Returns the id of an existing supplier matching `name` (case-insensitive), or creates one. */
   const findOrCreateSupplier = useMutation({
-    mutationFn: async (name: string) => {
-      const trimmed = name.trim();
-      const existing = (query.data ?? []).find(
-        (s) => s.name.toLowerCase() === trimmed.toLowerCase()
-      );
-      if (existing) return existing.id;
-
-      const { data, error } = await supabase
-        .from('suppliers')
-        .insert({ user_id: user!.id, name: trimmed })
-        .select('id')
-        .single();
-      if (error) throw error;
-      return data.id as string;
-    },
+    mutationFn: (name: string) => findOrCreateSupplierId(user!.id, name, query.data ?? []),
     onSuccess: invalidate,
   });
 
