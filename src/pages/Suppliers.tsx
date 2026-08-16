@@ -1,102 +1,70 @@
-import { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase';
-import { useAuth } from '@/contexts/AuthContext';
+import { useMemo, useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-
-type Supplier = {
-  id: string;
-  name: string;
-  contact_info: string | null;
-  email: string | null;
-  cnpj: string | null;
-};
+import { useSuppliers, supplierSchema, type Supplier, type SupplierFormValues } from '@/hooks/useSuppliers';
 
 export const Suppliers = () => {
-  const { user } = useAuth();
-  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { suppliers, isLoading, createSupplier, updateSupplier, deleteSupplier } = useSuppliers();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null);
-
-  // Form State
-  const [name, setName] = useState('');
-  const [contactInfo, setContactInfo] = useState('');
-  const [email, setEmail] = useState('');
-  const [cnpj, setCnpj] = useState('');
 
   // Filters State
   const [searchTerm, setSearchTerm] = useState('');
   const [sortOrder, setSortOrder] = useState('az');
 
-  const fetchSuppliers = async () => {
-    if (!user) return;
-    const { data } = await supabase
-      .from('suppliers')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('name');
-    if (data) setSuppliers(data);
-    setLoading(false);
-  };
-
-  useEffect(() => {
-    fetchSuppliers();
-  }, [user]);
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors, isSubmitting },
+  } = useForm<SupplierFormValues>({ resolver: zodResolver(supplierSchema) });
 
   const handleOpenDialog = (supplier?: Supplier) => {
     if (supplier) {
       setEditingSupplier(supplier);
-      setName(supplier.name);
-      setContactInfo(supplier.contact_info || '');
-      setEmail(supplier.email || '');
-      setCnpj(supplier.cnpj || '');
+      reset({
+        name: supplier.name,
+        contact_info: supplier.contact_info || '',
+        email: supplier.email || '',
+        cnpj: supplier.cnpj || '',
+      });
     } else {
       setEditingSupplier(null);
-      setName('');
-      setContactInfo('');
-      setEmail('');
-      setCnpj('');
+      reset({ name: '', contact_info: '', email: '', cnpj: '' });
     }
     setIsDialogOpen(true);
   };
 
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!user) return;
-
-    const supplierData = {
-      user_id: user.id,
-      name,
-      contact_info: contactInfo || null,
-      email: email || null,
-      cnpj: cnpj || null,
-    };
-
+  const onSubmit = async (values: SupplierFormValues) => {
     if (editingSupplier) {
-      await supabase
-        .from('suppliers')
-        .update(supplierData)
-        .eq('id', editingSupplier.id);
+      await updateSupplier.mutateAsync({ id: editingSupplier.id, values });
     } else {
-      await supabase
-        .from('suppliers')
-        .insert(supplierData);
+      await createSupplier.mutateAsync(values);
     }
-
     setIsDialogOpen(false);
-    fetchSuppliers();
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = (id: string) => {
     if (!confirm('Tem certeza que deseja excluir este fornecedor? Ele será removido de todos os ingredientes que o utilizam.')) return;
-    await supabase.from('suppliers').delete().eq('id', id);
-    fetchSuppliers();
+    deleteSupplier.mutate(id);
   };
 
-  if (loading) return <div className="p-xl text-center text-on-surface-variant font-body-md">Carregando fornecedores...</div>;
+  const filteredSuppliers = useMemo(() => {
+    return suppliers
+      .filter(sup => sup.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                     (sup.contact_info && sup.contact_info.toLowerCase().includes(searchTerm.toLowerCase())))
+      .sort((a, b) => {
+        if (sortOrder === 'az') return a.name.localeCompare(b.name);
+        if (sortOrder === 'za') return b.name.localeCompare(a.name);
+        return 0;
+      });
+  }, [suppliers, searchTerm, sortOrder]);
+
+  if (isLoading) return <div className="p-xl text-center text-on-surface-variant font-body-md">Carregando fornecedores...</div>;
 
   return (
     <div className="flex flex-col h-full w-full">
@@ -108,7 +76,7 @@ export const Suppliers = () => {
         </div>
         <div className="flex items-center gap-2">
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger 
+            <DialogTrigger
               onClick={() => handleOpenDialog()}
               className="flex items-center justify-center gap-2 bg-primary text-white font-bold text-[13px] px-4 py-2.5 rounded-[1.25rem] hover:bg-primary/90 active:scale-95 transition-all shadow-[0_4px_12px_rgba(159,64,45,0.2)]"
             >
@@ -119,24 +87,26 @@ export const Suppliers = () => {
               <DialogHeader>
                 <DialogTitle className="font-headline-sm text-primary">{editingSupplier ? 'Editar Fornecedor' : 'Novo Fornecedor'}</DialogTitle>
               </DialogHeader>
-              <form onSubmit={handleSave} className="space-y-4 pt-4">
+              <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-4 pt-4">
                 <div className="space-y-2">
                   <Label htmlFor="name" className="font-label-md text-on-surface-variant">Nome do fornecedor</Label>
-                  <Input id="name" className="bg-surface border-2 border-outline-variant font-body-md rounded-xl h-10 focus-visible:ring-primary-container" value={name} onChange={(e) => setName(e.target.value)} required />
+                  <Input id="name" aria-invalid={!!errors.name} className="bg-surface border-2 border-outline-variant font-body-md rounded-xl h-10 focus-visible:ring-primary-container" {...register('name')} />
+                  {errors.name && <p className="text-[12px] text-error">{errors.name.message}</p>}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="contact" className="font-label-md text-on-surface-variant">Contato (Opcional)</Label>
-                  <Input id="contact" placeholder="Telefone, Instagram, etc." className="bg-surface border-2 border-outline-variant font-body-md rounded-xl h-10 focus-visible:ring-primary-container" value={contactInfo} onChange={(e) => setContactInfo(e.target.value)} />
+                  <Input id="contact" placeholder="Telefone, Instagram, etc." className="bg-surface border-2 border-outline-variant font-body-md rounded-xl h-10 focus-visible:ring-primary-container" {...register('contact_info')} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="email" className="font-label-md text-on-surface-variant">E-mail (Opcional)</Label>
-                  <Input id="email" type="email" placeholder="fornecedor@email.com" className="bg-surface border-2 border-outline-variant font-body-md rounded-xl h-10 focus-visible:ring-primary-container" value={email} onChange={(e) => setEmail(e.target.value)} />
+                  <Input id="email" type="email" placeholder="fornecedor@email.com" aria-invalid={!!errors.email} className="bg-surface border-2 border-outline-variant font-body-md rounded-xl h-10 focus-visible:ring-primary-container" {...register('email')} />
+                  {errors.email && <p className="text-[12px] text-error">{errors.email.message}</p>}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="cnpj" className="font-label-md text-on-surface-variant">CNPJ (Opcional)</Label>
-                  <Input id="cnpj" placeholder="00.000.000/0000-00" className="bg-surface border-2 border-outline-variant font-body-md rounded-xl h-10 focus-visible:ring-primary-container" value={cnpj} onChange={(e) => setCnpj(e.target.value)} />
+                  <Input id="cnpj" placeholder="00.000.000/0000-00" className="bg-surface border-2 border-outline-variant font-body-md rounded-xl h-10 focus-visible:ring-primary-container" {...register('cnpj')} />
                 </div>
-                <button type="submit" className="w-full flex items-center justify-center gap-2 bg-primary text-white font-bold text-[13px] py-3 rounded-[1.25rem] hover:bg-primary/90 active:scale-95 transition-all shadow-[0_4px_12px_rgba(159,64,45,0.2)] mt-4">
+                <button type="submit" disabled={isSubmitting} className="w-full flex items-center justify-center gap-2 bg-primary text-white font-bold text-[13px] py-3 rounded-[1.25rem] hover:bg-primary/90 active:scale-95 transition-all shadow-[0_4px_12px_rgba(159,64,45,0.2)] mt-4 disabled:opacity-60">
                   <span className="material-symbols-outlined text-[18px]">save</span>
                   Salvar Fornecedor
                 </button>
@@ -150,9 +120,9 @@ export const Suppliers = () => {
       <div className="flex flex-col md:flex-row gap-4 mb-6 items-center">
         <div className="relative flex-1 w-full">
           <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px] z-10">search</span>
-          <Input 
-            type="text" 
-            placeholder="Buscar fornecedores..." 
+          <Input
+            type="text"
+            placeholder="Buscar fornecedores..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-12 pr-4 bg-surface border-2 border-outline-variant font-body-md rounded-2xl h-12"
@@ -175,29 +145,16 @@ export const Suppliers = () => {
 
       {/* List Container */}
       <div className="flex flex-col gap-4">
-        {(() => {
-          const filteredSuppliers = suppliers
-            .filter(sup => sup.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                           (sup.contact_info && sup.contact_info.toLowerCase().includes(searchTerm.toLowerCase())))
-            .sort((a, b) => {
-              if (sortOrder === 'az') return a.name.localeCompare(b.name);
-              if (sortOrder === 'za') return b.name.localeCompare(a.name);
-              return 0;
-            });
-
-          if (filteredSuppliers.length === 0) {
-            return (
-              <div className="py-xl flex flex-col items-center justify-center text-on-surface-variant bg-surface-container-lowest rounded-3xl border-2 border-dashed border-surface-container">
-                <span className="material-symbols-outlined text-6xl mb-4 opacity-50">storefront</span>
-                <p className="font-body-md text-center max-w-md">{searchTerm ? 'Nenhum fornecedor encontrado.' : 'Nenhum fornecedor cadastrado. Cadastre suas lojas e marcas preferidas.'}</p>
-              </div>
-            );
-          }
-
-          return filteredSuppliers.map((supplier) => (
+        {filteredSuppliers.length === 0 ? (
+          <div className="py-xl flex flex-col items-center justify-center text-on-surface-variant bg-surface-container-lowest rounded-3xl border-2 border-dashed border-surface-container">
+            <span className="material-symbols-outlined text-6xl mb-4 opacity-50">storefront</span>
+            <p className="font-body-md text-center max-w-md">{searchTerm ? 'Nenhum fornecedor encontrado.' : 'Nenhum fornecedor cadastrado. Cadastre suas lojas e marcas preferidas.'}</p>
+          </div>
+        ) : (
+          filteredSuppliers.map((supplier) => (
             <div key={supplier.id} className="bg-surface-container-lowest rounded-2xl p-4 flex flex-col md:flex-row items-start md:items-center justify-between shadow-sticker hover:scale-[1.01] transition-all relative overflow-hidden group border-2 border-surface-container gap-4">
               <div className="absolute top-0 right-0 w-32 h-32 bg-primary-container/5 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none"></div>
-              
+
               {/* Left side: Icon + Name */}
               <div className="flex items-center gap-4 flex-1 w-full relative z-10">
                 <div className="w-10 h-10 rounded-full bg-tertiary-fixed flex items-center justify-center shrink-0 shadow-inner">
@@ -221,10 +178,9 @@ export const Suppliers = () => {
                 </button>
               </div>
             </div>
-          ));
-        })()}
+          ))
+        )}
       </div>
     </div>
   );
 };
-
