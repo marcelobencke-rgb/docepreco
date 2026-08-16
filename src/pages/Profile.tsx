@@ -1,92 +1,57 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/lib/supabase';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Toast } from '@/components/ui/toast';
+import { useProfile, profileSchema } from '@/hooks/useProfile';
+
+const profileFormSchema = profileSchema.omit({ email: true });
+type ProfileFormValues = z.infer<typeof profileFormSchema>;
 
 export const Profile = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [profile, setProfile] = useState<{name: string, phone: string, email: string} | null>(null);
+  const { profile, isLoading, updateProfile } = useProfile();
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [toastVariant, setToastVariant] = useState<'success' | 'error'>('success');
 
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors, isSubmitting },
+  } = useForm<ProfileFormValues>({ resolver: zodResolver(profileFormSchema) });
+
   useEffect(() => {
-    const fetchProfile = async () => {
-      if (!user) return;
-      
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .maybeSingle();
-        
-      if (profileData) {
-        setProfile(profileData as any);
-      } else {
-        // Fallback for users created before the profiles table trigger
-        setProfile({
-          name: user.user_metadata?.name || user.user_metadata?.first_name || '',
-          phone: user.user_metadata?.phone || '',
-          email: user.email || ''
-        });
-      }
-      
-      setLoading(false);
-    };
+    if (profile) reset({ name: profile.name, phone: profile.phone });
+  }, [profile, reset]);
 
-    fetchProfile();
-  }, [user]);
-
-  const handleSubmitProfile = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (!user || !profile) return;
-    setSaving(true);
-    
+  const onSubmit = async (values: ProfileFormValues) => {
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .upsert({
-          id: user.id,
-          name: profile.name,
-          phone: profile.phone,
-          email: profile.email
-        });
-        
-      if (error) {
-        throw error;
-      }
-      
+      await updateProfile.mutateAsync({ ...values, email: profile?.email || user?.email || '' });
+
       setToastVariant('success');
       setToastMessage('Perfil salvo com sucesso!');
       setIsSuccessModalOpen(true);
-      
+
       setTimeout(() => {
         navigate('/');
       }, 1500);
-    } catch (error: any) {
-      console.error('Erro ao salvar perfil:', error);
+    } catch (error) {
       setToastVariant('error');
-      setToastMessage('Erro ao salvar perfil: ' + (error.message || 'Erro desconhecido'));
+      setToastMessage('Erro ao salvar perfil: ' + (error instanceof Error ? error.message : 'Erro desconhecido'));
       setIsSuccessModalOpen(true);
-    } finally {
-      setSaving(false);
     }
   };
 
-  const handleProfileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setProfile(prev => prev ? { ...prev, [name]: value } : null);
-  };
-
-  if (loading) {
+  if (isLoading || !profile) {
     return <div className="p-4">Carregando perfil...</div>;
   }
 
@@ -99,65 +64,61 @@ export const Profile = () => {
         </div>
       </header>
 
-      {profile && (
-        <Card>
-          <form onSubmit={handleSubmitProfile}>
-            <CardHeader>
-              <CardTitle>Dados Pessoais</CardTitle>
-              <CardDescription>
-                Suas informações de contato.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Nome completo</Label>
-                  <Input
-                    id="name"
-                    name="name"
-                    type="text"
-                    value={profile.name || ''}
-                    onChange={handleProfileChange}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="phone">Celular (WhatsApp)</Label>
-                  <Input
-                    id="phone"
-                    name="phone"
-                    type="tel"
-                    value={profile.phone || ''}
-                    onChange={handleProfileChange}
-                    required
-                  />
-                </div>
-                <div className="space-y-2 md:col-span-2">
-                  <Label htmlFor="email">E-mail</Label>
-                  <Input
-                    id="email"
-                    name="email"
-                    type="email"
-                    value={profile.email || user?.email || ''}
-                    disabled
-                  />
-                </div>
+      <Card>
+        <form onSubmit={handleSubmit(onSubmit)} noValidate>
+          <CardHeader>
+            <CardTitle>Dados Pessoais</CardTitle>
+            <CardDescription>
+              Suas informações de contato.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="name">Nome completo</Label>
+                <Input
+                  id="name"
+                  type="text"
+                  aria-invalid={!!errors.name}
+                  {...register('name')}
+                />
+                {errors.name && <p className="text-[12px] text-error">{errors.name.message}</p>}
               </div>
-            </CardContent>
-            <CardFooter>
-              <Button type="submit" disabled={saving} className="bg-primary hover:bg-[#8A3322] text-white">
-                {saving ? 'Salvando...' : 'Salvar Perfil'}
-              </Button>
-            </CardFooter>
-          </form>
-        </Card>
-      )}
+              <div className="space-y-2">
+                <Label htmlFor="phone">Celular (WhatsApp)</Label>
+                <Input
+                  id="phone"
+                  type="tel"
+                  aria-invalid={!!errors.phone}
+                  {...register('phone')}
+                />
+                {errors.phone && <p className="text-[12px] text-error">{errors.phone.message}</p>}
+              </div>
+              <div className="space-y-2 md:col-span-2">
+                <Label htmlFor="email">E-mail</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={profile.email || user?.email || ''}
+                  disabled
+                  readOnly
+                />
+              </div>
+            </div>
+          </CardContent>
+          <CardFooter>
+            <Button type="submit" disabled={isSubmitting} className="bg-primary hover:bg-[#8A3322] text-white">
+              {isSubmitting ? 'Salvando...' : 'Salvar Perfil'}
+            </Button>
+          </CardFooter>
+        </form>
+      </Card>
 
-      <Toast 
-        open={isSuccessModalOpen} 
-        onOpenChange={setIsSuccessModalOpen} 
-        title={toastVariant === 'error' ? 'Erro' : 'Sucesso!'} 
-        description={toastMessage} 
+      <Toast
+        open={isSuccessModalOpen}
+        onOpenChange={setIsSuccessModalOpen}
+        title={toastVariant === 'error' ? 'Erro' : 'Sucesso!'}
+        description={toastMessage}
         variant={toastVariant}
       />
     </div>
