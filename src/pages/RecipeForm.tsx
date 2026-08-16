@@ -178,7 +178,7 @@ export const RecipeForm = () => {
             <h2 className="font-display-lg text-[22px] text-primary mb-0.5 tracking-tight">
               {isEditing ? `Editar ${entityName}` : `Nova ${entityName}`}
             </h2>
-            <p className="font-label-md text-[12px] text-[#87655F]">
+            <p className="font-label-md text-[12px] text-on-surface-variant">
               Defina sua receita, ingredientes e acompanhe os custos reais.
             </p>
           </div>

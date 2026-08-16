@@ -127,7 +127,7 @@ export const Shopping = () => {
       <header className="flex justify-between items-center mb-6">
         <div>
           <h2 className="font-display-lg text-[22px] text-primary mb-0.5 tracking-tight">Compras</h2>
-          <p className="font-label-md text-[12px] text-[#87655F]">Gerencie suas listas de reabastecimento.</p>
+          <p className="font-label-md text-[12px] text-on-surface-variant">Gerencie suas listas de reabastecimento.</p>
         </div>
         {!selectedList && (
           <button
@@ -200,18 +200,18 @@ export const Shopping = () => {
                   className="bg-surface-container-lowest rounded-3xl p-6 cursor-pointer hover:shadow-float hover:-translate-y-1 transition-all border-2 border-transparent hover:border-primary-container group relative overflow-hidden"
                 >
                   <div className="flex items-start justify-between mb-4">
-                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${list.status === 'completed' ? 'bg-[#e2f1e5] text-[#2e6d3d]' : 'bg-[#faece8] text-primary'}`}>
+                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${list.status === 'completed' ? 'bg-[#e2f1e5] text-success' : 'bg-[#faece8] text-primary'}`}>
                       <span className="material-symbols-outlined">{list.status === 'completed' ? 'check_circle' : 'shopping_basket'}</span>
                     </div>
-                    <span className={`text-[10px] uppercase font-bold tracking-wider px-2 py-1 rounded-full ${list.status === 'completed' ? 'bg-[#e2f1e5] text-[#2e6d3d]' : 'bg-surface-container-high text-on-surface-variant'}`}>
+                    <span className={`text-[10px] uppercase font-bold tracking-wider px-2 py-1 rounded-full ${list.status === 'completed' ? 'bg-[#e2f1e5] text-success' : 'bg-surface-container-high text-on-surface-variant'}`}>
                       {list.status === 'completed' ? 'Concluída' : 'Pendente'}
                     </span>
                   </div>
-                  <h3 className="font-display-sm text-lg text-[#3e1d15] mb-1">{list.name}</h3>
+                  <h3 className="font-display-sm text-lg text-on-surface-strong mb-1">{list.name}</h3>
                   <div className="flex flex-col gap-0.5">
                     <p className="text-[12px] text-on-surface-variant">Criada em: {new Date(list.created_at).toLocaleDateString('pt-BR')}</p>
                     {list.status === 'completed' && list.completed_at && (
-                      <p className="text-[12px] text-[#2e6d3d] font-medium">Concluída em: {new Date(list.completed_at).toLocaleDateString('pt-BR')}</p>
+                      <p className="text-[12px] text-success font-medium">Concluída em: {new Date(list.completed_at).toLocaleDateString('pt-BR')}</p>
                     )}
                     {list.status === 'completed' && list.suppliers?.name && (
                       <p className="text-[12px] text-on-surface-variant">Fornecedor: {list.suppliers.name}</p>
@@ -235,8 +235,8 @@ export const Shopping = () => {
                   <span className="material-symbols-outlined text-[20px]">arrow_back</span>
                 </button>
                 <div>
-                  <h3 className="font-display-md text-2xl text-[#3e1d15]">{selectedList.name}</h3>
-                  <span className={`text-[11px] font-bold tracking-wider ${selectedList.status === 'completed' ? 'text-[#2e6d3d]' : 'text-primary'}`}>
+                  <h3 className="font-display-md text-2xl text-on-surface-strong">{selectedList.name}</h3>
+                  <span className={`text-[11px] font-bold tracking-wider ${selectedList.status === 'completed' ? 'text-success' : 'text-primary'}`}>
                     Status: {selectedList.status === 'completed' ? 'CONCLUÍDA' : 'PENDENTE'}
                   </span>
                 </div>
@@ -309,7 +309,7 @@ export const Shopping = () => {
                   <button
                     onClick={handleFinishList}
                     disabled={finishList.isPending}
-                    className="bg-[#2e6d3d] text-white font-label-md px-5 py-2.5 rounded-full flex items-center gap-2 shadow-sm hover:bg-[#235830] active:scale-95 transition-all"
+                    className="bg-success text-white font-label-md px-5 py-2.5 rounded-full flex items-center gap-2 shadow-sm hover:bg-[#235830] active:scale-95 transition-all"
                   >
                     <span className="material-symbols-outlined text-[18px]">done_all</span>
                     {finishList.isPending ? 'Processando...' : 'Finalizar Compra'}
@@ -353,7 +353,7 @@ export const Shopping = () => {
                         </button>
                       </div>
                       <div className="col-span-4 flex flex-col">
-                        <span className={`font-medium ${item.purchased ? 'line-through text-on-surface-variant' : 'text-[#3e1d15]'}`}>
+                        <span className={`font-medium ${item.purchased ? 'line-through text-on-surface-variant' : 'text-on-surface-strong'}`}>
                           {item.ingredients?.name}
                         </span>
                         <span className="text-[10px] text-on-surface-variant">Estoque atual: {item.ingredients?.current_stock} {['kg', 'g'].includes(item.ingredients?.purchase_unit || '') ? 'g' : ['litro', 'ml'].includes(item.ingredients?.purchase_unit || '') ? 'ml' : 'un'}</span>
@@ -450,9 +450,9 @@ export const Shopping = () => {
             </div>
 
             {selectedList.status === 'completed' && (
-              <div className="mt-4 p-4 bg-[#e2f1e5]/40 rounded-2xl flex items-center gap-3 border border-[#2e6d3d]/20">
-                <span className="material-symbols-outlined text-[#2e6d3d]">info</span>
-                <p className="text-sm text-[#2e6d3d]">Esta lista já foi finalizada. O estoque e os preços dos itens foram atualizados no inventário.</p>
+              <div className="mt-4 p-4 bg-[#e2f1e5]/40 rounded-2xl flex items-center gap-3 border border-success/20">
+                <span className="material-symbols-outlined text-success">info</span>
+                <p className="text-sm text-success">Esta lista já foi finalizada. O estoque e os preços dos itens foram atualizados no inventário.</p>
               </div>
             )}
           </div>
@@ -538,7 +538,7 @@ export const Shopping = () => {
           </div>
           <div className="flex justify-end gap-3 pt-4">
             <button type="button" onClick={() => setIsConfirmFinishOpen(false)} className="px-5 py-2 hover:bg-surface-container rounded-full font-label-md transition-colors">Cancelar</button>
-            <button type="button" onClick={executeFinishList} className="px-5 py-2 bg-[#2e6d3d] text-white font-bold rounded-full hover:bg-[#235830] font-label-md shadow-sm transition-colors flex items-center gap-2">
+            <button type="button" onClick={executeFinishList} className="px-5 py-2 bg-success text-white font-bold rounded-full hover:bg-[#235830] font-label-md shadow-sm transition-colors flex items-center gap-2">
               <span className="material-symbols-outlined text-[18px]">done_all</span>
               Confirmar
             </button>

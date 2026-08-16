@@ -124,7 +124,7 @@ export const RecipeCatalog = () => {
           <div className="w-16 h-16 bg-[#faece8] text-primary rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm">
             <span className="material-symbols-outlined text-3xl">error</span>
           </div>
-          <DialogTitle className="font-display-md text-2xl text-[#3e1d15] mb-2">Estoque Insuficiente!</DialogTitle>
+          <DialogTitle className="font-display-md text-2xl text-on-surface-strong mb-2">Estoque Insuficiente!</DialogTitle>
           <p className="font-body-md text-[#7a5642] mb-4">
             Você não possui os ingredientes necessários para produzir {productionMultiplier} lote(s) dessa receita:
           </p>
@@ -148,10 +148,10 @@ export const RecipeCatalog = () => {
       {/* Confirm Shortage Modal */}
       <Dialog open={isConfirmShortageModalOpen} onOpenChange={setIsConfirmShortageModalOpen}>
         <DialogContent className="max-w-md rounded-[2rem] p-6 text-center bg-surface-container-lowest border-2 border-primary/20 shadow-sticker [&>button]:hidden">
-          <div className="w-16 h-16 bg-[#fff4f2] text-[#DF7159] rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm">
+          <div className="w-16 h-16 bg-[#fff4f2] text-terracotta rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm">
             <span className="material-symbols-outlined text-3xl">warning</span>
           </div>
-          <DialogTitle className="font-display-md text-2xl text-[#3e1d15] mb-2">Atenção ao Estoque</DialogTitle>
+          <DialogTitle className="font-display-md text-2xl text-on-surface-strong mb-2">Atenção ao Estoque</DialogTitle>
           <p className="font-body-md text-[#7a5642] mb-4">
             Alguns ingredientes não possuem quantidade suficiente para {productionMultiplier} lote(s):
           </p>
@@ -230,7 +230,7 @@ export const RecipeCatalog = () => {
                  <span className="material-symbols-outlined text-[16px]">schedule</span>
                </div>
                <span className="text-[9px] uppercase tracking-[0.15em] text-[#7a5642] mb-1">Preparo</span>
-               <span className="font-display-sm text-xl text-[#3e1d15] font-semibold">{selectedRecipe.prep_time_minutes} Min</span>
+               <span className="font-display-sm text-xl text-on-surface-strong font-semibold">{selectedRecipe.prep_time_minutes} Min</span>
              </div>
 
              <div className="flex flex-col items-center justify-center flex-1 border-x border-[#eecfcd]/50">
@@ -238,7 +238,7 @@ export const RecipeCatalog = () => {
                  <span className="material-symbols-outlined text-[16px]">group</span>
                </div>
                <span className="text-[9px] uppercase tracking-[0.15em] text-[#7a5642] mb-1">Rendimento</span>
-               <span className="font-display-sm text-xl text-[#3e1d15] font-semibold">{selectedRecipe.yield} Unid</span>
+               <span className="font-display-sm text-xl text-on-surface-strong font-semibold">{selectedRecipe.yield} Unid</span>
              </div>
 
              <div className="flex flex-col items-center justify-center flex-1">
@@ -246,7 +246,7 @@ export const RecipeCatalog = () => {
                  <span className="material-symbols-outlined text-[16px]">kitchen</span>
                </div>
                <span className="text-[9px] uppercase tracking-[0.15em] text-[#7a5642] mb-1">Ingredientes</span>
-               <span className="font-display-sm text-xl text-[#3e1d15] font-semibold">{selectedRecipe.recipe_ingredients.length} Itens</span>
+               <span className="font-display-sm text-xl text-on-surface-strong font-semibold">{selectedRecipe.recipe_ingredients.length} Itens</span>
              </div>
 
              {/* Decorative squiggly line (simulated with a subtle gradient bar at bottom) */}
@@ -274,7 +274,7 @@ export const RecipeCatalog = () => {
                       {isChecked && <span className="material-symbols-outlined text-[14px] text-white font-bold">check</span>}
                     </div>
                     <div className={`flex flex-col transition-all ${isChecked ? 'opacity-40 line-through' : ''}`}>
-                      <span className="font-body-md text-[#3e1d15] capitalize font-medium">{ri.ingredients?.name}</span>
+                      <span className="font-body-md text-on-surface-strong capitalize font-medium">{ri.ingredients?.name}</span>
                       <span className="font-body-sm text-[#7a5642] mt-0.5 text-[12px]">
                         {ri.quantity_used} {getUnitDisplay(ri.ingredients?.purchase_unit || '')}
                       </span>
@@ -394,7 +394,7 @@ export const RecipeCatalog = () => {
       <header className="flex justify-between items-center mb-6">
         <div>
           <h2 className="font-display-lg text-[22px] text-primary mb-0.5 tracking-tight">Receitas</h2>
-          <p className="font-label-md text-[12px] text-[#87655F]">
+          <p className="font-label-md text-[12px] text-on-surface-variant">
             Navegue pelas suas receitas e visualize a ficha completa.
           </p>
         </div>
@@ -407,7 +407,7 @@ export const RecipeCatalog = () => {
       </header>
 
       {/* Filters Row */}
-      <div className="flex flex-col md:flex-row gap-4 mb-10 items-center">
+      <div className="flex flex-col md:flex-row gap-4 mb-6 items-center">
         <div className="relative flex-1 w-full">
           <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px] z-10">search</span>
           <Input
@@ -450,7 +450,7 @@ export const RecipeCatalog = () => {
       {filteredRecipes.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-24 text-center border-2 border-dashed border-[#eecfcd] rounded-[3rem]">
           <span className="material-symbols-outlined text-[80px] text-[#e2725b]/30 mb-6">cake</span>
-          <h3 className="font-headline-md text-[#3e1d15] mb-2">Nenhuma receita encontrada</h3>
+          <h3 className="font-headline-md text-on-surface-strong mb-2">Nenhuma receita encontrada</h3>
           <p className="font-body-md text-[#7a5642]">Tente ajustar a sua busca ou adicione uma nova receita!</p>
         </div>
       ) : (
@@ -461,7 +461,7 @@ export const RecipeCatalog = () => {
               onClick={() => setSelectedRecipeId(recipe.id)}
               className="group cursor-pointer bg-white p-5 rounded-[2rem] shadow-[0_4px_20px_rgba(159,64,45,0.05)] hover:shadow-[0_8px_30px_rgba(159,64,45,0.1)] hover:-translate-y-1 transition-all flex flex-col items-center"
             >
-              <h3 className="font-display-md text-[20px] text-[#7A3326] text-center leading-tight mb-2 group-hover:text-[#DF7159] transition-colors pt-2">{recipe.name}</h3>
+              <h3 className="font-display-md text-[20px] text-[#7A3326] text-center leading-tight mb-2 group-hover:text-terracotta transition-colors pt-2">{recipe.name}</h3>
               <div className="flex items-center justify-center gap-2 text-[13px] text-[#B08D87] mb-5">
                 <span>{recipe.recipe_ingredients.length} ingredientes</span>
                 <span className="w-1 h-1 rounded-full bg-[#D9C4C0]"></span>
@@ -474,7 +474,7 @@ export const RecipeCatalog = () => {
               </div>
 
               <div className="flex items-center justify-center w-full mt-auto">
-                <div className="flex items-center justify-center gap-1.5 text-[#DF7159] bg-[#FFF4F2] border border-[#DF7159]/20 text-[12px] px-4 py-1.5 rounded-full font-medium w-full">
+                <div className="flex items-center justify-center gap-1.5 text-terracotta bg-[#FFF4F2] border border-terracotta/20 text-[12px] px-4 py-1.5 rounded-full font-medium w-full">
                   <span className="material-symbols-outlined text-[14px]">check</span>
                   Produzida {recipe.production_count || 0} vezes
                 </div>

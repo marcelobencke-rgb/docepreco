@@ -85,7 +85,7 @@ export const CashFlow = () => {
       <header className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
         <div>
           <h2 className="font-display-lg text-[22px] text-primary mb-0.5 tracking-tight">Caixa</h2>
-          <p className="font-label-md text-[12px] text-[#87655F]">Controle suas entradas e saídas.</p>
+          <p className="font-label-md text-[12px] text-on-surface-variant">Controle suas entradas e saídas.</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <button

@@ -50,7 +50,7 @@ export const Settings = () => {
       <header className="flex justify-between items-center mb-6">
         <div>
           <h2 className="font-display-lg text-[22px] text-primary mb-0.5 tracking-tight">Configurações</h2>
-          <p className="font-label-md text-[12px] text-[#87655F]">Ajuste seus valores padrão para os cálculos de precificação.</p>
+          <p className="font-label-md text-[12px] text-on-surface-variant">Ajuste seus valores padrão para os cálculos de precificação.</p>
         </div>
       </header>
 

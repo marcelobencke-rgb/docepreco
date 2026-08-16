@@ -60,7 +60,7 @@ export const Profile = () => {
       <header className="flex justify-between items-center mb-6">
         <div>
           <h2 className="font-display-lg text-[22px] text-primary mb-0.5 tracking-tight">Meu Perfil</h2>
-          <p className="font-label-md text-[12px] text-[#87655F]">Gerencie suas informações pessoais de acesso.</p>
+          <p className="font-label-md text-[12px] text-on-surface-variant">Gerencie suas informações pessoais de acesso.</p>
         </div>
       </header>
 

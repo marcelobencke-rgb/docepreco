@@ -72,7 +72,7 @@ export const Suppliers = () => {
       <header className="flex justify-between items-center mb-6">
         <div>
           <h2 className="font-display-lg text-[22px] text-primary mb-0.5 tracking-tight">Meus Fornecedores</h2>
-          <p className="font-label-md text-[12px] text-[#87655F]">Gerencie contatos de compras.</p>
+          <p className="font-label-md text-[12px] text-on-surface-variant">Gerencie contatos de compras.</p>
         </div>
         <div className="flex items-center gap-2">
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -161,8 +161,8 @@ export const Suppliers = () => {
                   <span className="material-symbols-outlined text-on-tertiary-fixed text-[16px]">storefront</span>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="text-[16px] text-[#3e1d15] font-medium mb-0.5 truncate" title={supplier.name}>{supplier.name}</h3>
-                  <p className="text-[13px] text-[#87655F] truncate">
+                  <h3 className="text-[16px] text-on-surface-strong font-medium mb-0.5 truncate" title={supplier.name}>{supplier.name}</h3>
+                  <p className="text-[13px] text-on-surface-variant truncate">
                     {supplier.contact_info ? `Contato: ${supplier.contact_info}` : 'Sem contato'}
                   </p>
                 </div>

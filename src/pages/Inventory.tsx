@@ -189,7 +189,7 @@ export const Inventory = () => {
       <header className="flex justify-between items-center mb-6">
         <div>
           <h2 className="font-display-lg text-[22px] text-primary mb-0.5 tracking-tight">Meu Inventário</h2>
-          <p className="font-label-md text-[12px] text-[#87655F]">Controle de estoque de ingredientes e embalagens.</p>
+          <p className="font-label-md text-[12px] text-on-surface-variant">Controle de estoque de ingredientes e embalagens.</p>
         </div>
         <div className="flex items-center gap-2">
           {activeTab === 'estoque' && (
@@ -315,14 +315,14 @@ export const Inventory = () => {
                     </div>
                     <div className="flex flex-col overflow-hidden w-full">
                       <div className="flex items-center gap-2 mb-1">
-                        <h3 className="font-headline-sm text-[16px] text-[#3e1d15] truncate" title={ing.name}>{ing.name}</h3>
+                        <h3 className="font-headline-sm text-[16px] text-on-surface-strong truncate" title={ing.name}>{ing.name}</h3>
                         <span className="px-2 py-0.5 bg-surface rounded-md text-[9px] font-bold text-on-surface-variant uppercase tracking-wider border border-outline-variant/30">{ing.category}</span>
                         {(Number(ing.min_stock_limit) > 0 && Number(ing.current_stock) <= Number(ing.min_stock_limit)) && (
                           <span className="material-symbols-outlined text-error text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }} title="Estoque baixo">warning</span>
                         )}
                       </div>
                       {ing.suppliers?.name && (
-                        <p className="text-[13px] text-[#87655F] truncate">
+                        <p className="text-[13px] text-on-surface-variant truncate">
                           Fornecedor: {ing.suppliers.name}
                         </p>
                       )}
@@ -332,19 +332,19 @@ export const Inventory = () => {
                   {/* Middle: Stats & Stock */}
                   <div className="flex flex-wrap md:flex-nowrap items-center gap-4 md:gap-8 w-full md:w-auto px-0 md:px-6 relative z-10">
                     <div className="text-right border-l-2 border-dashed border-surface-container-high pl-4 md:pl-6">
-                      <p className="text-[10px] text-[#87655F] uppercase tracking-wider mb-0.5 font-medium">Estoque Atual</p>
-                      <span className={`text-[15px] font-bold ${(Number(ing.min_stock_limit) > 0 && Number(ing.current_stock) <= Number(ing.min_stock_limit)) ? 'text-error' : 'text-[#3e1d15]'}`}>
+                      <p className="text-[10px] text-on-surface-variant uppercase tracking-wider mb-0.5 font-medium">Estoque Atual</p>
+                      <span className={`text-[15px] font-bold ${(Number(ing.min_stock_limit) > 0 && Number(ing.current_stock) <= Number(ing.min_stock_limit)) ? 'text-error' : 'text-on-surface-strong'}`}>
                         {Number(ing.current_stock).toLocaleString('pt-BR')}
-                        <span className="text-[11px] text-[#87655F]/70 ml-1">{getBaseUnitLabel(ing.purchase_unit)}</span>
+                        <span className="text-[11px] text-on-surface-variant/70 ml-1">{getBaseUnitLabel(ing.purchase_unit)}</span>
                       </span>
                     </div>
                     <div className="text-right border-l-2 border-dashed border-surface-container-high pl-4 md:pl-6 hidden sm:block">
-                      <p className="text-[10px] text-[#87655F] uppercase tracking-wider mb-0.5 font-medium">Estoque Mínimo</p>
-                      <span className="text-[15px] font-bold text-[#87655F]">
+                      <p className="text-[10px] text-on-surface-variant uppercase tracking-wider mb-0.5 font-medium">Estoque Mínimo</p>
+                      <span className="text-[15px] font-bold text-on-surface-variant">
                         {Number(ing.min_stock_limit) > 0 ? (
                           <>
                             {Number(ing.min_stock_limit).toLocaleString('pt-BR')}
-                            <span className="text-[11px] text-[#87655F]/70 ml-1">{getBaseUnitLabel(ing.purchase_unit)}</span>
+                            <span className="text-[11px] text-on-surface-variant/70 ml-1">{getBaseUnitLabel(ing.purchase_unit)}</span>
                           </>
                         ) : (
                           <span className="text-[12px] font-normal italic">Não controlado</span>
@@ -403,11 +403,11 @@ export const Inventory = () => {
               filteredMovements.map(mov => (
                 <div key={mov.id} className="flex justify-between items-center bg-surface-container-lowest p-5 rounded-2xl shadow-sm border border-surface-container hover:shadow-md transition-shadow group">
                   <div className="flex items-center gap-4">
-                     <div className={`w-12 h-12 rounded-full flex items-center justify-center shrink-0 shadow-sm ${mov.type === 'in' ? 'bg-primary text-white' : 'bg-[#2e6d3d] text-white'}`}>
+                     <div className={`w-12 h-12 rounded-full flex items-center justify-center shrink-0 shadow-sm ${mov.type === 'in' ? 'bg-primary text-white' : 'bg-success text-white'}`}>
                        <span className="material-symbols-outlined">{mov.type === 'in' ? 'arrow_downward' : 'arrow_upward'}</span>
                      </div>
                      <div>
-                       <p className="font-bold text-[#3e1d15] text-[15px]">{mov.ingredients?.name}</p>
+                       <p className="font-bold text-on-surface-strong text-[15px]">{mov.ingredients?.name}</p>
                        <p className="text-[12px] text-on-surface-variant flex items-center gap-1 mt-0.5">
                          <span className="material-symbols-outlined text-[14px]">schedule</span>
                          {new Date(mov.created_at).toLocaleString('pt-BR')} • {translateReason(mov.reason)}
@@ -415,11 +415,11 @@ export const Inventory = () => {
                      </div>
                   </div>
                   <div className="flex flex-col items-end">
-                    <div className={`font-bold text-lg ${mov.type === 'in' ? 'text-primary' : 'text-[#2e6d3d]'}`}>
+                    <div className={`font-bold text-lg ${mov.type === 'in' ? 'text-primary' : 'text-success'}`}>
                       {mov.type === 'in' ? '+' : '-'}{mov.quantity} <span className="text-[12px] font-medium opacity-80">{getBaseUnitLabel(mov.ingredients?.purchase_unit || '')}</span>
                     </div>
                     {mov.type === 'in' && mov.price && (
-                      <div className="text-[12px] text-[#87655F]">
+                      <div className="text-[12px] text-on-surface-variant">
                         {Number(mov.price).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} • {mov.suppliers?.name || 'Sem fornecedor'}
                       </div>
                     )}
@@ -440,7 +440,7 @@ export const Inventory = () => {
           <form onSubmit={handleSubmit(onSubmitMovement)} noValidate className="space-y-6 pt-4">
             <div className="bg-surface p-4 rounded-xl border border-outline-variant/30 flex justify-between items-center">
               <div>
-                <p className="font-bold text-[#3e1d15] text-sm">{movementIngredient?.name}</p>
+                <p className="font-bold text-on-surface-strong text-sm">{movementIngredient?.name}</p>
                 <p className="text-xs text-on-surface-variant">Estoque atual: {movementIngredient?.current_stock} {getBaseUnitLabel(movementIngredient?.purchase_unit || '')}</p>
               </div>
             </div>
@@ -605,11 +605,11 @@ export const Inventory = () => {
             <DialogTitle className="font-headline-sm text-primary">Receitas Vinculadas</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 pt-4">
-            <p className="font-body-md text-on-surface-variant">O ingrediente <strong className="text-[#3e1d15]">{selectedLinkedIngredientName}</strong> está sendo usado nas seguintes receitas:</p>
+            <p className="font-body-md text-on-surface-variant">O ingrediente <strong className="text-on-surface-strong">{selectedLinkedIngredientName}</strong> está sendo usado nas seguintes receitas:</p>
             <div className="max-h-64 overflow-y-auto space-y-2 pr-2">
               {selectedLinkedRecipes.map((ri, idx) => (
                 <div key={idx} className="flex justify-between items-center bg-surface-container-low p-3 rounded-xl border border-surface-container">
-                  <span className="font-medium text-[#3e1d15]">{ri.recipes?.name}</span>
+                  <span className="font-medium text-on-surface-strong">{ri.recipes?.name}</span>
                   <span className="text-[13px] text-primary font-bold">{ri.quantity_used} {getBaseUnitLabel(selectedLinkedIngredientUnit)}</span>
                 </div>
               ))}

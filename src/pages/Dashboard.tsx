@@ -45,7 +45,7 @@ export const Dashboard = () => {
       <header className="flex justify-between items-center mb-6">
         <div>
           <h2 className="font-display-lg text-[22px] text-primary mb-0.5 tracking-tight">Olá, {userName}! ✨</h2>
-          <p className="font-label-md text-[12px] text-[#87655F]">Veja como está o seu ateliê hoje.</p>
+          <p className="font-label-md text-[12px] text-on-surface-variant">Veja como está o seu ateliê hoje.</p>
         </div>
         <div className="flex items-center gap-2">
           <Link to="/configuracoes" className="w-8 h-8 rounded-full bg-[#FDF0EC] flex items-center justify-center text-primary hover:bg-[#F8E4E0] transition-all">
@@ -68,7 +68,7 @@ export const Dashboard = () => {
             </div>
             <div className="flex flex-col">
               <h3 className="font-display-lg text-[24px] text-on-surface leading-none mb-1">{stats.recipes}</h3>
-              <p className="font-label-md text-[11px] text-[#87655F] leading-tight">Receitas<br/>Cadastradas</p>
+              <p className="font-label-md text-[11px] text-on-surface-variant leading-tight">Receitas<br/>Cadastradas</p>
             </div>
           </div>
         </Link>
@@ -81,7 +81,7 @@ export const Dashboard = () => {
             </div>
             <div className="flex flex-col">
               <h3 className="font-display-lg text-[24px] text-on-surface leading-none mb-1">{stats.ingredients}</h3>
-              <p className="font-label-md text-[11px] text-[#87655F] leading-tight">Ingredientes<br/>Cadastrados</p>
+              <p className="font-label-md text-[11px] text-on-surface-variant leading-tight">Ingredientes<br/>Cadastrados</p>
             </div>
           </div>
         </Link>
@@ -94,22 +94,22 @@ export const Dashboard = () => {
             </div>
             <div className="flex flex-col">
               <h3 className="font-display-lg text-[24px] text-on-surface leading-none mb-1">{stats.pricings}</h3>
-              <p className="font-label-md text-[11px] text-[#87655F] leading-tight">Precificações<br/>Realizadas</p>
+              <p className="font-label-md text-[11px] text-on-surface-variant leading-tight">Precificações<br/>Realizadas</p>
             </div>
           </div>
         </Link>
 
         {/* Card 4: Estoque Baixo */}
         <Link to="/inventario" className="block outline-none">
-          <div className={`p-4 lg:p-5 rounded-[1.5rem] flex items-center gap-4 hover:-translate-y-1 transition-transform cursor-pointer ${stats.lowStock > 0 ? 'bg-[#DF7159] shadow-[0_8px_24px_rgba(223,113,89,0.3)]' : 'bg-white shadow-[0_4px_20px_rgba(159,64,45,0.05)]'}`}>
-            <div className={`w-12 h-12 shrink-0 rounded-full flex items-center justify-center ${stats.lowStock > 0 ? 'bg-white text-[#DF7159]' : 'bg-[#F2F0F4] text-[#A39CA9]'}`}>
+          <div className={`p-4 lg:p-5 rounded-[1.5rem] flex items-center gap-4 hover:-translate-y-1 transition-transform cursor-pointer ${stats.lowStock > 0 ? 'bg-terracotta shadow-[0_8px_24px_rgba(223,113,89,0.3)]' : 'bg-white shadow-[0_4px_20px_rgba(159,64,45,0.05)]'}`}>
+            <div className={`w-12 h-12 shrink-0 rounded-full flex items-center justify-center ${stats.lowStock > 0 ? 'bg-white text-terracotta' : 'bg-[#F2F0F4] text-[#A39CA9]'}`}>
               <span className="material-symbols-outlined text-[24px]" style={stats.lowStock > 0 ? { fontVariationSettings: "'FILL' 1" } : {}}>
                 {stats.lowStock > 0 ? 'warning' : 'inventory_2'}
               </span>
             </div>
             <div className="flex flex-col">
               <h3 className={`font-display-lg text-[24px] leading-none mb-1 ${stats.lowStock > 0 ? 'text-white' : 'text-on-surface'}`}>{stats.lowStock}</h3>
-              <p className={`font-label-md text-[11px] leading-tight ${stats.lowStock > 0 ? 'text-[#F9D5CE]' : 'text-[#87655F]'}`}>
+              <p className={`font-label-md text-[11px] leading-tight ${stats.lowStock > 0 ? 'text-[#F9D5CE]' : 'text-on-surface-variant'}`}>
                 {stats.lowStock === 1 ? 'Item com' : 'Itens com'}<br/>Estoque Baixo
               </p>
             </div>
@@ -123,7 +123,7 @@ export const Dashboard = () => {
         <div className="bg-white p-5 rounded-[1.5rem] shadow-[0_4px_20px_rgba(159,64,45,0.05)] flex flex-col">
           <div className="flex justify-between items-center mb-4">
             <h3 className="font-display-lg text-[18px] text-on-surface">Fichas Técnicas Recentes</h3>
-            <Link to="/fichas-tecnicas" className="text-[#DF7159] font-bold text-[12px] hover:underline">
+            <Link to="/fichas-tecnicas" className="text-terracotta font-bold text-[12px] hover:underline">
               Ver Todas
             </Link>
           </div>
@@ -152,7 +152,7 @@ export const Dashboard = () => {
         <div className="bg-white p-5 rounded-[1.5rem] shadow-[0_4px_20px_rgba(159,64,45,0.05)] flex flex-col">
           <div className="flex justify-between items-center mb-4">
             <h3 className="font-display-lg text-[18px] text-on-surface">Receitas Recentes</h3>
-            <Link to="/receitas" className="text-[#DF7159] font-bold text-[12px] hover:underline">
+            <Link to="/receitas" className="text-terracotta font-bold text-[12px] hover:underline">
               Ver Todas
             </Link>
           </div>
@@ -184,7 +184,7 @@ export const Dashboard = () => {
           <div className="flex flex-col gap-2 mb-2 items-end">
             <Link to="/receitas/nova" className="flex items-center gap-3 bg-white px-5 py-3 rounded-full shadow-[0_4px_12px_rgba(0,0,0,0.1)] hover:scale-105 transition-all text-on-surface">
               <span className="font-bold text-[14px]">Nova Receita</span>
-              <div className="w-8 h-8 rounded-full bg-[#DF7159] flex items-center justify-center text-white">
+              <div className="w-8 h-8 rounded-full bg-terracotta flex items-center justify-center text-white">
                 <span className="material-symbols-outlined text-[16px]">cake</span>
               </div>
             </Link>

@@ -153,7 +153,7 @@ export const Pricing = () => {
       <header className="flex justify-between items-center mb-6">
         <div>
           <h2 className="font-display-lg text-[22px] text-primary mb-0.5 tracking-tight">Precificação</h2>
-          <p className="font-label-md text-[12px] text-[#87655F]">Calcule e salve o preço ideal para suas receitas.</p>
+          <p className="font-label-md text-[12px] text-on-surface-variant">Calcule e salve o preço ideal para suas receitas.</p>
         </div>
         <div className="flex items-center gap-2">
           {activeTab === 'listagem' ? (
@@ -254,7 +254,7 @@ export const Pricing = () => {
                   <div className="flex-1 w-full">
                     <div className="flex items-center gap-3 mb-2">
                       <h3 className="font-display-md text-[18px] text-[#7A3326] leading-tight">{pricing.recipes?.name || 'Receita Excluída'}</h3>
-                      <span className="text-[11px] text-[#B08D87] bg-[#FFF4F2] px-2 py-0.5 rounded-full border border-[#DF7159]/20 font-medium">Rende {pricing.recipes?.yield || '-'} un</span>
+                      <span className="text-[11px] text-[#B08D87] bg-[#FFF4F2] px-2 py-0.5 rounded-full border border-terracotta/20 font-medium">Rende {pricing.recipes?.yield || '-'} un</span>
                     </div>
                     <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-[13px]">
                       <span className="text-on-surface-variant font-medium">Custo Total (estimado): <strong className="text-on-surface font-semibold">{totalCost.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}/un</strong></span>
@@ -265,7 +265,7 @@ export const Pricing = () => {
 
                   <div className="flex flex-row items-center gap-3 shrink-0 w-full lg:w-auto justify-between lg:justify-end pt-4 lg:pt-0 border-t border-dashed border-surface-container lg:border-t-0">
                     <div className="bg-[#FDF0EC] border border-[#F6DED8] rounded-xl px-4 py-2 flex flex-col items-center justify-center min-w-[120px]">
-                      <span className="text-[10px] font-bold text-[#DF7159] tracking-wider uppercase">{pricing.saved_price ? 'Preço Definido' : 'Preço Sugerido'}</span>
+                      <span className="text-[10px] font-bold text-terracotta tracking-wider uppercase">{pricing.saved_price ? 'Preço Definido' : 'Preço Sugerido'}</span>
                       <strong className="text-[18px] font-display-md text-primary">
                         {(pricing.saved_price || pricing.suggested_price).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                       </strong>
@@ -281,7 +281,7 @@ export const Pricing = () => {
                           setSavedPrice(pricing.saved_price ? formatCurrencyInput(pricing.saved_price) : '');
                           setActiveTab('calculadora');
                         }}
-                        className="bg-white text-[#87655F] font-bold text-[13px] px-4 py-2.5 rounded-xl hover:bg-[#FDF0EC] hover:text-primary active:scale-95 transition-all border border-surface-container flex items-center gap-2"
+                        className="bg-white text-on-surface-variant font-bold text-[13px] px-4 py-2.5 rounded-xl hover:bg-[#FDF0EC] hover:text-primary active:scale-95 transition-all border border-surface-container flex items-center gap-2"
                       >
                         <span className="material-symbols-outlined text-[16px]">edit</span>
                         <span className="hidden sm:inline">Editar</span>

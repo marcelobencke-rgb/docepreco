@@ -21,7 +21,7 @@ export const Layout = () => {
     <div className="flex min-h-screen text-on-surface font-body-md antialiased selection:bg-primary-container selection:text-on-primary-container">
       
       {/* Side Navigation Shell for Desktop */}
-      <nav className="hidden md:flex flex-col p-4 fixed left-0 top-0 h-full w-48 z-50 bg-[#FCF4EA] border-r border-[#FCF4EA] shadow-[4px_0_24px_rgba(232,122,140,0.05)]">
+      <nav className="hidden md:flex flex-col p-4 fixed left-0 top-0 h-full w-48 z-50 bg-surface border-r border-surface shadow-[4px_0_24px_rgba(232,122,140,0.05)]">
         <div className="mb-8 text-center pt-4">
           <Link to="/" className="block cursor-pointer hover:opacity-80 transition-opacity">
             <img src="/logo.png" alt="Docepreço Logo" className="w-32 h-auto mx-auto" />
@@ -62,7 +62,7 @@ export const Layout = () => {
       </nav>
 
       {/* Top Bar for Mobile */}
-      <header className="fixed top-0 inset-x-0 z-50 flex h-16 items-center justify-between border-b border-surface-variant bg-[#FCF4EA] px-4 md:hidden shadow-sm">
+      <header className="fixed top-0 inset-x-0 z-50 flex h-16 items-center justify-between border-b border-surface-variant bg-surface px-4 md:hidden shadow-sm">
         <Link to="/" className="flex items-center gap-2 cursor-pointer active:opacity-80">
           <img src="/logo.png" alt="Docepreço Logo" className="w-8 h-auto" />
           <h1 className="text-xl font-display-lg text-primary font-bold">Docepreço</h1>
@@ -84,7 +84,7 @@ export const Layout = () => {
       </main>
 
       {/* Bottom Navigation for Mobile */}
-      <nav className="fixed inset-x-0 bottom-0 z-50 flex h-16 items-center justify-around border-t border-surface-variant bg-[#FCF4EA] md:hidden shadow-[0px_-4px_10px_rgba(232,122,140,0.1)] px-1">
+      <nav className="fixed inset-x-0 bottom-0 z-50 flex h-16 items-center justify-around border-t border-surface-variant bg-surface md:hidden shadow-[0px_-4px_10px_rgba(232,122,140,0.1)] px-1">
         {navItems.filter(item => item.path !== '/' && item.path !== '/configuracoes').map((item) => {
           const isActive = location.pathname === item.path || (item.path !== '/' && location.pathname.startsWith(item.path));
           return (
