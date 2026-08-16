@@ -1,5 +1,8 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,29 +10,39 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Utensils } from 'lucide-react';
 
+const registerSchema = z.object({
+  name: z.string().min(1, 'Nome obrigatório'),
+  phone: z.string().min(1, 'Celular obrigatório'),
+  email: z.string().min(1, 'E-mail obrigatório').email('E-mail inválido'),
+  password: z.string().min(6, 'A senha precisa ter pelo menos 6 caracteres'),
+});
+
+type RegisterFormValues = z.infer<typeof registerSchema>;
+
 export const Register = () => {
-  const [name, setName] = useState('');
-  const [phone, setPhone] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
-  const handleRegister = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<RegisterFormValues>({ resolver: zodResolver(registerSchema) });
+
+  const onSubmit = async (values: RegisterFormValues) => {
     setLoading(true);
     setError(null);
 
     const { error } = await supabase.auth.signUp({
-      email,
-      password,
+      email: values.email,
+      password: values.password,
       options: {
         data: {
-          name,
-          phone
-        }
-      }
+          name: values.name,
+          phone: values.phone,
+        },
+      },
     });
 
     if (error) {
@@ -47,7 +60,7 @@ export const Register = () => {
         <Utensils size={32} />
         <h1 className="text-3xl font-bold">Docepreço</h1>
       </div>
-      
+
       <Card className="w-full max-w-md border-border/50 shadow-lg">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-semibold">Criar conta</CardTitle>
@@ -55,7 +68,7 @@ export const Register = () => {
             Preencha seus dados para começar a precificar seus doces
           </CardDescription>
         </CardHeader>
-        <form onSubmit={handleRegister}>
+        <form onSubmit={handleSubmit(onSubmit)} noValidate>
           <CardContent className="space-y-4">
             {error && (
               <div className="rounded-md bg-destructive/15 p-3 text-sm text-destructive">
@@ -68,10 +81,12 @@ export const Register = () => {
                 id="name"
                 type="text"
                 placeholder="Maria da Silva"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
+                aria-invalid={!!errors.name}
+                {...register('name')}
               />
+              {errors.name && (
+                <p className="text-sm text-destructive">{errors.name.message}</p>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="phone">Celular (WhatsApp)</Label>
@@ -79,10 +94,12 @@ export const Register = () => {
                 id="phone"
                 type="tel"
                 placeholder="(11) 99999-9999"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                required
+                aria-invalid={!!errors.phone}
+                {...register('phone')}
               />
+              {errors.phone && (
+                <p className="text-sm text-destructive">{errors.phone.message}</p>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="email">E-mail</Label>
@@ -90,20 +107,24 @@ export const Register = () => {
                 id="email"
                 type="email"
                 placeholder="m@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
+                aria-invalid={!!errors.email}
+                {...register('email')}
               />
+              {errors.email && (
+                <p className="text-sm text-destructive">{errors.email.message}</p>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Senha</Label>
               <Input
                 id="password"
                 type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
+                aria-invalid={!!errors.password}
+                {...register('password')}
               />
+              {errors.password && (
+                <p className="text-sm text-destructive">{errors.password.message}</p>
+              )}
             </div>
           </CardContent>
           <CardFooter className="flex flex-col space-y-4">
