@@ -1,115 +1,68 @@
-import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
-import { useAuth } from '@/contexts/AuthContext';
+import { useState } from 'react';
+import { Controller, useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  useCashCategories,
+  cashCategorySchema,
+  type CashCategory,
+  type CashCategoryFormValues,
+} from '@/hooks/useCashCategories';
 
-export type CashCategory = {
-  id: string;
-  name: string;
-  type: 'income' | 'expense';
-};
+export type { CashCategory };
 
 type CashCategoryDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSave: () => void;
 };
 
-export const CashCategoryDialog = ({ open, onOpenChange, onSave }: CashCategoryDialogProps) => {
-  const { user } = useAuth();
-  const [categories, setCategories] = useState<CashCategory[]>([]);
-  const [loading, setLoading] = useState(false);
-  
-  const [name, setName] = useState('');
-  const [type, setType] = useState<'income' | 'expense'>('expense');
+export const CashCategoryDialog = ({ open, onOpenChange }: CashCategoryDialogProps) => {
+  const { categories, createCategory, updateCategory, deleteCategory } = useCashCategories();
   const [categoryToDelete, setCategoryToDelete] = useState<string | null>(null);
   const [editingCategory, setEditingCategory] = useState<CashCategory | null>(null);
 
-  useEffect(() => {
-    if (open && user) {
-      loadCategories();
-    }
-  }, [open, user]);
+  const {
+    control,
+    register,
+    handleSubmit,
+    reset,
+    formState: { isSubmitting, errors },
+  } = useForm<CashCategoryFormValues>({
+    resolver: zodResolver(cashCategorySchema),
+    defaultValues: { name: '', type: 'expense' },
+  });
 
-  const loadCategories = async () => {
-    if (!user) return;
-    const { data, error } = await supabase
-      .from('cash_categories')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('name');
-      
-    if (!error && data) {
-      setCategories(data);
-    }
+  const startEdit = (cat: CashCategory) => {
+    setEditingCategory(cat);
+    reset({ name: cat.name, type: cat.type });
   };
 
-  const handleAddOrEdit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!user || !name.trim()) return;
-    
-    setLoading(true);
-    
-    if (editingCategory) {
-      const { error } = await supabase
-        .from('cash_categories')
-        .update({ name: name.trim(), type })
-        .eq('id', editingCategory.id)
-        .eq('user_id', user.id);
+  const cancelEdit = () => {
+    setEditingCategory(null);
+    reset({ name: '', type: 'expense' });
+  };
 
-      if (!error) {
-        setEditingCategory(null);
-        setName('');
-        setType('expense');
-        loadCategories();
-        onSave();
-      }
+  const onSubmit = async (values: CashCategoryFormValues) => {
+    if (editingCategory) {
+      await updateCategory.mutateAsync({ id: editingCategory.id, values });
     } else {
-      const { error } = await supabase
-        .from('cash_categories')
-        .insert([{
-          user_id: user.id,
-          name: name.trim(),
-          type
-        }]);
-      
-      if (!error) {
-        setName('');
-        loadCategories();
-        onSave();
-      }
+      await createCategory.mutateAsync(values);
     }
-    setLoading(false);
+    cancelEdit();
   };
 
   const handleOpenChange = (isOpen: boolean) => {
-    if (!isOpen) {
-      setName('');
-      setType('expense');
-      setEditingCategory(null);
-    }
+    if (!isOpen) cancelEdit();
     onOpenChange(isOpen);
   };
 
-  const handleDeleteClick = (id: string) => {
-    setCategoryToDelete(id);
-  };
-
   const confirmDelete = async () => {
-    if (!user || !categoryToDelete) return;
-    
-    await supabase
-      .from('cash_categories')
-      .delete()
-      .eq('id', categoryToDelete)
-      .eq('user_id', user.id);
-      
+    if (!categoryToDelete) return;
+    await deleteCategory.mutateAsync(categoryToDelete);
     setCategoryToDelete(null);
-    loadCategories();
-    onSave();
   };
 
   return (
@@ -118,17 +71,17 @@ export const CashCategoryDialog = ({ open, onOpenChange, onSave }: CashCategoryD
         <DialogHeader className="shrink-0">
           <DialogTitle className="font-headline-sm text-primary">Gerenciar Categorias</DialogTitle>
         </DialogHeader>
-        
+
         <div className="flex flex-col gap-6 overflow-hidden pt-2">
-          <form onSubmit={handleAddOrEdit} className="shrink-0 flex flex-col gap-4 bg-surface p-4 rounded-2xl border-2 border-surface-container-low transition-all">
+          <form onSubmit={handleSubmit(onSubmit)} noValidate className="shrink-0 flex flex-col gap-4 bg-surface p-4 rounded-2xl border-2 border-surface-container-low transition-all">
             <div className="flex justify-between items-center">
               <h3 className="font-label-md text-on-surface-variant font-bold">
                 {editingCategory ? 'Editar Categoria' : 'Adicionar Nova Categoria'}
               </h3>
               {editingCategory && (
-                <button 
-                  type="button" 
-                  onClick={() => { setEditingCategory(null); setName(''); setType('expense'); }}
+                <button
+                  type="button"
+                  onClick={cancelEdit}
                   className="text-[12px] text-primary font-bold hover:underline"
                 >
                   Cancelar Edição
@@ -138,33 +91,39 @@ export const CashCategoryDialog = ({ open, onOpenChange, onSave }: CashCategoryD
             <div className="flex gap-2">
               <div className="flex-1 space-y-2">
                 <Label className="text-[12px]">Nome</Label>
-                <Input 
-                  value={name} 
-                  onChange={e => setName(e.target.value)} 
+                <Input
                   placeholder="Ex: Vendas, Água, Ingredientes..."
+                  aria-invalid={!!errors.name}
                   className="bg-surface-container-lowest border-2 border-outline-variant font-body-md rounded-xl h-10 focus-visible:ring-primary-container"
-                  required
+                  {...register('name')}
                 />
+                {errors.name && <p className="text-[11px] text-error">{errors.name.message}</p>}
               </div>
               <div className="w-32 space-y-2">
                 <Label className="text-[12px]">Tipo</Label>
-                <Select value={type} onValueChange={(val: 'income' | 'expense') => setType(val)}>
-                  <SelectTrigger className="bg-surface-container-lowest border-2 border-outline-variant font-body-md rounded-xl !h-10 w-full">
-                    <SelectValue>{type === 'income' ? 'Entrada' : 'Saída'}</SelectValue>
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="income">Entrada</SelectItem>
-                    <SelectItem value="expense">Saída</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Controller
+                  control={control}
+                  name="type"
+                  render={({ field }) => (
+                    <Select value={field.value} onValueChange={(val) => field.onChange(val || 'expense')}>
+                      <SelectTrigger className="bg-surface-container-lowest border-2 border-outline-variant font-body-md rounded-xl !h-10 w-full">
+                        <SelectValue>{(v: 'income' | 'expense') => (v === 'income' ? 'Entrada' : 'Saída')}</SelectValue>
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="income">Entrada</SelectItem>
+                        <SelectItem value="expense">Saída</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
               </div>
             </div>
-            <button 
-              type="submit" 
-              disabled={loading || !name.trim()}
+            <button
+              type="submit"
+              disabled={isSubmitting}
               className="w-full bg-primary text-white font-bold text-[13px] py-2.5 rounded-xl hover:bg-primary/90 transition-all disabled:opacity-50 shadow-sm"
             >
-              {loading ? 'Salvando...' : (editingCategory ? 'Salvar Alterações' : 'Adicionar Categoria')}
+              {isSubmitting ? 'Salvando...' : (editingCategory ? 'Salvar Alterações' : 'Adicionar Categoria')}
             </button>
           </form>
 
@@ -184,15 +143,15 @@ export const CashCategoryDialog = ({ open, onOpenChange, onSave }: CashCategoryD
                     <span className="font-bold text-[14px] text-on-surface">{cat.name}</span>
                   </div>
                   <div className="flex items-center gap-1">
-                    <button 
-                      onClick={() => { setEditingCategory(cat); setName(cat.name); setType(cat.type); }}
+                    <button
+                      onClick={() => startEdit(cat)}
                       className="w-8 h-8 rounded-full flex items-center justify-center text-primary hover:bg-primary-container transition-colors"
                       title="Editar Categoria"
                     >
                       <span className="material-symbols-outlined text-[18px]">edit</span>
                     </button>
-                    <button 
-                      onClick={() => handleDeleteClick(cat.id)}
+                    <button
+                      onClick={() => setCategoryToDelete(cat.id)}
                       className="w-8 h-8 rounded-full flex items-center justify-center text-error hover:bg-error-container transition-colors"
                       title="Excluir Categoria"
                     >
@@ -216,13 +175,13 @@ export const CashCategoryDialog = ({ open, onOpenChange, onSave }: CashCategoryD
             <p className="text-[14px] text-on-surface-variant font-medium mt-2">As transações vinculadas a ela perderão a categoria.</p>
           </div>
           <div className="flex gap-3 justify-end pt-2 border-t border-surface-container-low">
-            <button 
+            <button
               onClick={() => setCategoryToDelete(null)}
               className="px-4 py-2 bg-surface-container text-on-surface font-bold text-[13px] rounded-xl hover:bg-surface-container-high transition-colors"
             >
               Cancelar
             </button>
-            <button 
+            <button
               onClick={confirmDelete}
               className="px-4 py-2 bg-error text-white font-bold text-[13px] rounded-xl hover:bg-error/90 transition-all shadow-[0_4px_12px_rgba(255,0,0,0.2)]"
             >

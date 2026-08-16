@@ -1,15 +1,13 @@
-import { useEffect, useState, useMemo, useRef } from 'react';
-import { supabase } from '@/lib/supabase';
-import { useAuth } from '@/contexts/AuthContext';
+import { useState, useMemo } from 'react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { CashCategoryDialog, type CashCategory } from '@/components/CashCategoryDialog';
+import { CashCategoryDialog } from '@/components/CashCategoryDialog';
 import { CashTransactionDialog, type CashTransaction } from '@/components/CashTransactionDialog';
+import { useCashCategories } from '@/hooks/useCashCategories';
+import { useCashTransactions } from '@/hooks/useCashTransactions';
 
 export const CashFlow = () => {
-  const { user } = useAuth();
-  
   // State
   const [activeTab, setActiveTab] = useState<'resumo' | 'extrato'>('resumo');
 
@@ -17,13 +15,12 @@ export const CashFlow = () => {
   const now = new Date();
   const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
   const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
-  
+
   const [startDate, setStartDate] = useState(firstDay);
   const [endDate, setEndDate] = useState(lastDay);
-  
-  const [categories, setCategories] = useState<CashCategory[]>([]);
-  const [transactions, setTransactions] = useState<CashTransaction[]>([]);
-  const [loading, setLoading] = useState(true);
+
+  const { categories } = useCashCategories();
+  const { transactions, isLoading, deleteTransaction } = useCashTransactions(startDate, endDate);
 
   // Filters for Extrato
   const [searchTerm, setSearchTerm] = useState('');
@@ -36,73 +33,10 @@ export const CashFlow = () => {
   const [editingTransaction, setEditingTransaction] = useState<CashTransaction | null>(null);
   const [transactionToDelete, setTransactionToDelete] = useState<string | null>(null);
 
-  const isSeeding = useRef(false);
-
-  useEffect(() => {
-    if (user) {
-      loadData();
-    }
-  }, [user?.id, startDate, endDate]);
-
-  const loadData = async () => {
-    if (!user) return;
-    setLoading(true);
-
-    // 1. Load Categories
-    const { data: cats, error: catsError } = await supabase
-      .from('cash_categories')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('name');
-      
-    let currentCategories = cats || [];
-    
-    // Seed default categories if none exist
-    if (!catsError && currentCategories.length === 0 && !isSeeding.current) {
-      isSeeding.current = true;
-      const defaultCategories = [
-        { user_id: user.id, name: 'Vendas', type: 'income' },
-        { user_id: user.id, name: 'Ingredientes', type: 'expense' },
-        { user_id: user.id, name: 'Embalagens', type: 'expense' },
-        { user_id: user.id, name: 'Água / Luz', type: 'expense' },
-        { user_id: user.id, name: 'Transporte', type: 'expense' }
-      ];
-      
-      const { data: insertedCats } = await supabase
-        .from('cash_categories')
-        .insert(defaultCategories)
-        .select('*');
-        
-      if (insertedCats) {
-        currentCategories = insertedCats.sort((a, b) => a.name.localeCompare(b.name));
-      }
-    }
-    
-    setCategories(currentCategories as CashCategory[]);
-
-    // 2. Load Transactions for the selected period
-    const { data: trans } = await supabase
-      .from('cash_transactions')
-      .select('*, cash_categories(name)')
-      .eq('user_id', user.id)
-      .gte('date', startDate)
-      .lte('date', endDate)
-      .order('date', { ascending: false })
-      .order('created_at', { ascending: false });
-
-    setTransactions(trans || []);
-    setLoading(false);
-  };
-
-  const handleDeleteTransactionClick = (id: string) => {
-    setTransactionToDelete(id);
-  };
-
   const confirmDeleteTransaction = async () => {
-    if (!user || !transactionToDelete) return;
-    await supabase.from('cash_transactions').delete().eq('id', transactionToDelete).eq('user_id', user.id);
+    if (!transactionToDelete) return;
+    await deleteTransaction.mutateAsync(transactionToDelete);
     setTransactionToDelete(null);
-    loadData();
   };
 
   // Calculations for Resumo
@@ -118,7 +52,7 @@ export const CashFlow = () => {
 
       const catName = t.cash_categories?.name || 'Sem Categoria';
       const key = `${t.type}-${catName}`;
-      
+
       if (!catSummary[key]) {
         catSummary[key] = { name: catName, type: t.type, amount: 0 };
       }
@@ -136,12 +70,14 @@ export const CashFlow = () => {
   }, [transactions]);
 
   // Filters for Extrato
-  const filteredTransactions = transactions.filter(t => {
-    const matchSearch = t.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchType = typeFilter === 'todos' || t.type === typeFilter;
-    const matchCategory = categoryFilter === 'todas' || t.category_id === categoryFilter;
-    return matchSearch && matchType && matchCategory;
-  });
+  const filteredTransactions = useMemo(() => {
+    return transactions.filter(t => {
+      const matchSearch = t.description.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchType = typeFilter === 'todos' || t.type === typeFilter;
+      const matchCategory = categoryFilter === 'todas' || t.category_id === categoryFilter;
+      return matchSearch && matchType && matchCategory;
+    });
+  }, [transactions, searchTerm, typeFilter, categoryFilter]);
 
   return (
     <div className="flex flex-col h-full w-full">
@@ -152,14 +88,14 @@ export const CashFlow = () => {
           <p className="font-label-md text-[12px] text-[#87655F]">Controle suas entradas e saídas.</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <button 
+          <button
             onClick={() => setIsCategoryDialogOpen(true)}
             className="flex items-center justify-center gap-2 bg-surface text-on-surface-variant font-bold text-[13px] px-4 py-2.5 rounded-[1.25rem] hover:bg-surface-container-high transition-all border-2 border-surface-container-low"
           >
             <span className="material-symbols-outlined text-[18px]">category</span>
             Categorias
           </button>
-          <button 
+          <button
             onClick={() => { setEditingTransaction(null); setIsTransactionDialogOpen(true); }}
             className="flex items-center justify-center gap-2 bg-primary text-white font-bold text-[13px] px-4 py-2.5 rounded-[1.25rem] hover:bg-primary/90 active:scale-95 transition-all shadow-[0_4px_12px_rgba(159,64,45,0.2)]"
           >
@@ -172,31 +108,31 @@ export const CashFlow = () => {
       {/* Tabs & Month Selector */}
       <div className="flex flex-col md:flex-row justify-between border-b-2 border-surface-container mb-6 gap-4 md:gap-0 pb-3 md:pb-0">
         <div className="flex gap-6">
-          <button 
-            onClick={() => setActiveTab('resumo')} 
+          <button
+            onClick={() => setActiveTab('resumo')}
             className={`pb-3 font-label-md uppercase tracking-wider relative transition-colors ${activeTab === 'resumo' ? 'text-primary' : 'text-on-surface-variant hover:text-on-surface'}`}
           >
             Resumo
             {activeTab === 'resumo' && <div className="absolute bottom-[-2px] left-0 w-full h-[2px] bg-primary rounded-t-full"></div>}
           </button>
-          <button 
-            onClick={() => setActiveTab('extrato')} 
+          <button
+            onClick={() => setActiveTab('extrato')}
             className={`pb-3 font-label-md uppercase tracking-wider relative transition-colors ${activeTab === 'extrato' ? 'text-primary' : 'text-on-surface-variant hover:text-on-surface'}`}
           >
             Extrato
             {activeTab === 'extrato' && <div className="absolute bottom-[-2px] left-0 w-full h-[2px] bg-primary rounded-t-full"></div>}
           </button>
         </div>
-        
+
         <div className="flex items-center gap-2 md:pb-2">
-          <Input 
+          <Input
             type="date"
             value={startDate}
             onChange={e => setStartDate(e.target.value)}
             className="bg-surface border-2 border-outline-variant font-body-md rounded-2xl h-10 min-w-[130px] md:w-[140px]"
           />
           <span className="text-on-surface-variant font-medium text-[14px]">até</span>
-          <Input 
+          <Input
             type="date"
             value={endDate}
             onChange={e => setEndDate(e.target.value)}
@@ -207,7 +143,7 @@ export const CashFlow = () => {
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto pb-10">
-        {loading ? (
+        {isLoading ? (
           <div className="flex justify-center py-10">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
           </div>
@@ -282,9 +218,9 @@ export const CashFlow = () => {
             <div className="flex flex-col md:flex-row gap-4 mb-6 items-center">
               <div className="relative flex-1 w-full">
                 <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px] z-10">search</span>
-                <Input 
-                  type="text" 
-                  placeholder="Buscar lançamento..." 
+                <Input
+                  type="text"
+                  placeholder="Buscar lançamento..."
                   value={searchTerm}
                   onChange={e => setSearchTerm(e.target.value)}
                   className="w-full pl-12 pr-4 bg-surface border-2 border-outline-variant font-body-md rounded-2xl h-12"
@@ -292,7 +228,7 @@ export const CashFlow = () => {
               </div>
               <div className="flex gap-4 w-full md:w-auto">
                 <div className="w-full md:w-48">
-                  <Select value={typeFilter} onValueChange={setTypeFilter}>
+                  <Select value={typeFilter} onValueChange={(val) => setTypeFilter(val || 'todos')}>
                     <SelectTrigger className="bg-surface border-2 border-outline-variant font-body-md rounded-2xl !h-12 w-full">
                       <SelectValue placeholder="Todos os tipos" />
                     </SelectTrigger>
@@ -304,7 +240,7 @@ export const CashFlow = () => {
                   </Select>
                 </div>
                 <div className="w-full md:w-48">
-                  <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                  <Select value={categoryFilter} onValueChange={(val) => setCategoryFilter(val || 'todas')}>
                     <SelectTrigger className="bg-surface border-2 border-outline-variant font-body-md rounded-2xl !h-12 w-full">
                       <SelectValue placeholder="Todas categorias" />
                     </SelectTrigger>
@@ -342,22 +278,22 @@ export const CashFlow = () => {
                         <span className="bg-surface px-2 py-0.5 rounded-md border border-outline-variant/30">{t.cash_categories?.name || 'Sem categoria'}</span>
                       </div>
                     </div>
-                    
+
                     <div className="flex items-center justify-between w-full md:w-auto gap-4 pl-7 md:pl-0">
                       <span className={`font-bold text-[16px] ${t.type === 'income' ? 'text-primary' : 'text-error'}`}>
                         {t.type === 'income' ? '+ ' : '- '}
                         {Number(t.amount).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                       </span>
                       <div className="flex items-center gap-1">
-                        <button 
+                        <button
                           onClick={() => { setEditingTransaction(t); setIsTransactionDialogOpen(true); }}
                           className="w-8 h-8 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high transition-colors"
                           title="Editar"
                         >
                           <span className="material-symbols-outlined text-[18px]">edit</span>
                         </button>
-                        <button 
-                          onClick={() => handleDeleteTransactionClick(t.id)}
+                        <button
+                          onClick={() => setTransactionToDelete(t.id)}
                           className="w-8 h-8 rounded-full flex items-center justify-center text-error hover:bg-error-container transition-colors"
                           title="Excluir"
                         >
@@ -373,18 +309,17 @@ export const CashFlow = () => {
         )}
       </div>
 
-      <CashCategoryDialog 
-        open={isCategoryDialogOpen} 
+      <CashCategoryDialog
+        open={isCategoryDialogOpen}
         onOpenChange={setIsCategoryDialogOpen}
-        onSave={loadData} 
       />
 
-      <CashTransactionDialog 
-        open={isTransactionDialogOpen} 
+      <CashTransactionDialog
+        open={isTransactionDialogOpen}
         onOpenChange={setIsTransactionDialogOpen}
         transactionToEdit={editingTransaction}
-        categories={categories}
-        onSave={loadData} 
+        startDate={startDate}
+        endDate={endDate}
       />
 
       <Dialog open={!!transactionToDelete} onOpenChange={(open) => !open && setTransactionToDelete(null)}>
@@ -396,13 +331,13 @@ export const CashFlow = () => {
             <p className="text-[14px] text-on-surface-variant">Deseja realmente excluir este lançamento?</p>
           </div>
           <div className="flex gap-3 justify-end pt-2 border-t border-surface-container-low">
-            <button 
+            <button
               onClick={() => setTransactionToDelete(null)}
               className="px-4 py-2 bg-surface-container text-on-surface font-bold text-[13px] rounded-xl hover:bg-surface-container-high transition-colors"
             >
               Cancelar
             </button>
-            <button 
+            <button
               onClick={confirmDeleteTransaction}
               className="px-4 py-2 bg-error text-white font-bold text-[13px] rounded-xl hover:bg-error/90 transition-all shadow-[0_4px_12px_rgba(255,0,0,0.2)]"
             >
