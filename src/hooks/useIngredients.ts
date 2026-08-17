@@ -59,6 +59,11 @@ function toBaseUnitQuantity(quantity: number, unit: string) {
   return quantity * (BASE_UNIT_MULTIPLIER[unit] ?? 1);
 }
 
+export function isLowStock(ingredient: Pick<Ingredient, 'current_stock' | 'min_stock_limit'>) {
+  const min = Number(ingredient.min_stock_limit);
+  return min > 0 && Number(ingredient.current_stock) <= min;
+}
+
 export function useIngredients() {
   const { user } = useAuth();
   const queryClient = useQueryClient();

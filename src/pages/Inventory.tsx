@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useIngredients, type Ingredient } from '@/hooks/useIngredients';
+import { useIngredients, isLowStock, type Ingredient } from '@/hooks/useIngredients';
 import { useSuppliers } from '@/hooks/useSuppliers';
 import { useStockMovements } from '@/hooks/useStockMovements';
 
@@ -317,7 +317,7 @@ export const Inventory = () => {
                       <div className="flex items-center gap-2 mb-1">
                         <h3 className="font-headline-sm text-[16px] text-on-surface-strong truncate" title={ing.name}>{ing.name}</h3>
                         <span className="px-2 py-0.5 bg-surface rounded-md text-[9px] font-bold text-on-surface-variant uppercase tracking-wider border border-outline-variant/30">{ing.category}</span>
-                        {(Number(ing.min_stock_limit) > 0 && Number(ing.current_stock) <= Number(ing.min_stock_limit)) && (
+                        {isLowStock(ing) && (
                           <span className="material-symbols-outlined text-error text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }} title="Estoque baixo">warning</span>
                         )}
                       </div>
@@ -333,7 +333,7 @@ export const Inventory = () => {
                   <div className="flex flex-wrap md:flex-nowrap items-center gap-4 md:gap-8 w-full md:w-auto px-0 md:px-6 relative z-10">
                     <div className="text-right border-l-2 border-dashed border-surface-container-high pl-4 md:pl-6">
                       <p className="text-[10px] text-on-surface-variant uppercase tracking-wider mb-0.5 font-medium">Estoque Atual</p>
-                      <span className={`text-[15px] font-bold ${(Number(ing.min_stock_limit) > 0 && Number(ing.current_stock) <= Number(ing.min_stock_limit)) ? 'text-error' : 'text-on-surface-strong'}`}>
+                      <span className={`text-[15px] font-bold ${isLowStock(ing) ? 'text-error' : 'text-on-surface-strong'}`}>
                         {Number(ing.current_stock).toLocaleString('pt-BR')}
                         <span className="text-[11px] text-on-surface-variant/70 ml-1">{getBaseUnitLabel(ing.purchase_unit)}</span>
                       </span>

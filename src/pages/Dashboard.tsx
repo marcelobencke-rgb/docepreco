@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { useIngredients } from '@/hooks/useIngredients';
+import { useIngredients, isLowStock } from '@/hooks/useIngredients';
 import { useRecipes } from '@/hooks/useRecipes';
 import { usePricings } from '@/hooks/usePricings';
 import { useProfile } from '@/hooks/useProfile';
@@ -21,10 +21,7 @@ export const Dashboard = () => {
     ingredients: ingredients.length,
     recipes: recipes.length,
     pricings: pricings.length,
-    lowStock: ingredients.filter(i => {
-      const min = Number(i.min_stock_limit);
-      return min > 0 && Number(i.current_stock) <= min;
-    }).length,
+    lowStock: ingredients.filter(isLowStock).length,
   }), [ingredients, recipes, pricings]);
 
   const recentRecipes = useMemo(() => {
