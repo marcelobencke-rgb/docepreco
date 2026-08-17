@@ -9,7 +9,12 @@
       "Bash(gh auth *)",
       "Bash(gh --version)",
       "Bash(git remote *)",
-      "Bash(git push *)"
+      "Bash(git push *)",
+      "Bash(git ls-remote *)",
+      "Bash(git fetch *)",
+      "Bash(git ls-tree *)",
+      "Bash(git merge --allow-unrelated-histories -s ours origin/main -m 'merge: reconcile pre-existing main branch history with this session'\\\\''s rewrite *)",
+      "Bash(git branch *)"
     ]
   }
 }
