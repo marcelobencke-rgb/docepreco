@@ -43,3 +43,39 @@ export function useStockMovements(enabled: boolean = true) {
     error: query.error,
   };
 }
+
+export type PriceHistoryEntry = {
+  price: number;
+  quantity: number;
+  created_at: string;
+  suppliers: { name: string } | null;
+};
+
+async function fetchIngredientPriceHistory(ingredientId: string): Promise<PriceHistoryEntry[]> {
+  const { data, error } = await supabase
+    .from('stock_movements')
+    .select('price, quantity, created_at, suppliers(name)')
+    .eq('ingredient_id', ingredientId)
+    .eq('type', 'in')
+    .not('price', 'is', null)
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return (data ?? []) as unknown as PriceHistoryEntry[];
+}
+
+/** Purchase price history for a single ingredient — a separate, lean query (not derived from
+ * useStockMovements(), which only loads once the Inventory "Movimentações" tab is opened). Only
+ * fetches once `ingredientId` is set (e.g. when the history dialog opens). */
+export function useIngredientPriceHistory(ingredientId: string | null) {
+  const query = useQuery({
+    queryKey: queryKeys.ingredientPriceHistory(ingredientId ?? ''),
+    queryFn: () => fetchIngredientPriceHistory(ingredientId!),
+    enabled: !!ingredientId,
+  });
+
+  return {
+    history: query.data ?? [],
+    isLoading: query.isLoading,
+    error: query.error,
+  };
+}

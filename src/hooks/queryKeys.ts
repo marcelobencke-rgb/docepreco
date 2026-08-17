@@ -2,6 +2,7 @@ export const queryKeys = {
   suppliers: (userId: string) => ['suppliers', userId] as const,
   ingredients: (userId: string) => ['ingredients', userId] as const,
   stockMovements: (userId: string) => ['stockMovements', userId] as const,
+  ingredientPriceHistory: (ingredientId: string) => ['ingredientPriceHistory', ingredientId] as const,
   recipes: (userId: string) => ['recipes', userId] as const,
   pricings: (userId: string) => ['pricings', userId] as const,
   settings: (userId: string) => ['settings', userId] as const,

@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useIngredients, isLowStock, type Ingredient } from '@/hooks/useIngredients';
 import { useSuppliers } from '@/hooks/useSuppliers';
-import { useStockMovements } from '@/hooks/useStockMovements';
+import { useStockMovements, useIngredientPriceHistory } from '@/hooks/useStockMovements';
 
 const movementSchema = z
   .object({
@@ -47,6 +47,10 @@ export const Inventory = () => {
   const [selectedLinkedRecipes, setSelectedLinkedRecipes] = useState<{ quantity_used: number, recipes: { name: string } }[]>([]);
   const [selectedLinkedIngredientName, setSelectedLinkedIngredientName] = useState('');
   const [selectedLinkedIngredientUnit, setSelectedLinkedIngredientUnit] = useState('');
+
+  // Price History Modal State
+  const [priceHistoryIngredient, setPriceHistoryIngredient] = useState<Ingredient | null>(null);
+  const { history: priceHistory, isLoading: loadingPriceHistory } = useIngredientPriceHistory(priceHistoryIngredient?.id ?? null);
 
   // Tabs State
   const [activeTab, setActiveTab] = useState<'estoque' | 'movimentacoes'>('estoque');
@@ -379,6 +383,9 @@ export const Inventory = () => {
                     <button onClick={() => handleOpenMovement(ing)} title="Movimentar Estoque" className="w-10 h-10 rounded-full bg-surface md:bg-transparent hover:bg-tertiary-container hover:text-on-tertiary-container transition-colors flex items-center justify-center shadow-sm md:shadow-none text-tertiary">
                       <span className="material-symbols-outlined text-[16px]">swap_vert</span>
                     </button>
+                    <button onClick={() => setPriceHistoryIngredient(ing)} title="Histórico de Preço" className="w-10 h-10 rounded-full bg-surface md:bg-transparent hover:bg-secondary-container hover:text-on-secondary-container transition-colors flex items-center justify-center shadow-sm md:shadow-none">
+                      <span className="material-symbols-outlined text-[16px]">history</span>
+                    </button>
                     <button onClick={() => handleOpenDialog(ing)} title="Editar" className="w-10 h-10 rounded-full bg-surface md:bg-transparent hover:bg-primary-container hover:text-on-primary-container transition-colors flex items-center justify-center shadow-sm md:shadow-none">
                       <span className="material-symbols-outlined text-[16px]">edit</span>
                     </button>
@@ -618,6 +625,63 @@ export const Inventory = () => {
               <button
                 type="button"
                 onClick={() => setLinkedRecipesModalOpen(false)}
+                className="px-6 py-3 font-label-md text-on-surface hover:bg-surface-container-high rounded-full transition-colors"
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Price History Dialog */}
+      <Dialog open={!!priceHistoryIngredient} onOpenChange={(open) => !open && setPriceHistoryIngredient(null)}>
+        <DialogContent className="sm:max-w-[420px] bg-surface-container-lowest border-2 border-primary-container rounded-3xl">
+          <DialogHeader>
+            <DialogTitle className="font-headline-sm text-primary">Histórico de Preço</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-4">
+            <p className="font-body-md text-on-surface-variant">Preço por {getBaseUnitLabel(priceHistoryIngredient?.purchase_unit || '')} pago em compras de <strong className="text-on-surface-strong">{priceHistoryIngredient?.name}</strong>:</p>
+            <div className="max-h-80 overflow-y-auto space-y-2 pr-2">
+              {loadingPriceHistory ? (
+                <p className="text-center text-[13px] text-on-surface-variant py-4">Carregando...</p>
+              ) : priceHistory.length === 0 ? (
+                <p className="text-center text-[13px] text-on-surface-variant py-6">Nenhuma compra com preço registrada ainda.</p>
+              ) : (
+                priceHistory.map((entry, idx) => {
+                  const unitPrice = entry.quantity > 0 ? entry.price / entry.quantity : 0;
+                  const previous = priceHistory[idx + 1];
+                  const previousUnitPrice = previous && previous.quantity > 0 ? previous.price / previous.quantity : null;
+                  const trend = previousUnitPrice != null ? unitPrice - previousUnitPrice : 0;
+                  return (
+                    <div key={idx} className="flex items-center justify-between bg-surface-container-low p-3 rounded-xl border border-surface-container">
+                      <div className="flex flex-col">
+                        <span className="text-[13px] font-medium text-on-surface-strong">
+                          {new Date(entry.created_at).toLocaleDateString('pt-BR')}
+                        </span>
+                        <span className="text-[11px] text-on-surface-variant">
+                          {entry.quantity.toLocaleString('pt-BR')} {getBaseUnitLabel(priceHistoryIngredient?.purchase_unit || '')} · {entry.suppliers?.name || 'Sem fornecedor'}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        {trend !== 0 && (
+                          <span className={`material-symbols-outlined text-[16px] ${trend > 0 ? 'text-error' : 'text-success'}`} title={trend > 0 ? 'Aumentou desde a compra anterior' : 'Diminuiu desde a compra anterior'}>
+                            {trend > 0 ? 'arrow_upward' : 'arrow_downward'}
+                          </span>
+                        )}
+                        <span className="font-bold text-primary text-[14px]">
+                          {unitPrice.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 4 })}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+            <div className="flex justify-end pt-2">
+              <button
+                type="button"
+                onClick={() => setPriceHistoryIngredient(null)}
                 className="px-6 py-3 font-label-md text-on-surface hover:bg-surface-container-high rounded-full transition-colors"
               >
                 Fechar
